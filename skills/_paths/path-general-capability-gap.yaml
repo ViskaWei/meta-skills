@@ -1,0 +1,205 @@
+id: path-general-capability-gap
+name: "Capability Gap Detection — Diagnose Missing Agent Capabilities"
+domain: harness
+version: 1
+outcome: "Agent failure signals → capability gap diagnosis → user-confirmed priorities → new capabilities built → verified coverage improvement"
+source: "Harness Engineering P2 (问'缺什么能力'而非'再试试')"
+execution_mode: team
+parallel_groups: []
+
+description: >
+  当 agent 卡住或反复失败时，不是"再试试"，而是诊断缺什么能力。
+  收集失败信号（error logs, ghost cap references, incomplete blocks），
+  映射当前能力覆盖率，识别缺口（工具/护栏/抽象/文档），优先级排序，
+  用户确认后自动补建缺失能力。设计为能力基础设施投资，复利增长。
+
+triggers:
+  - "improve gaps"
+  - "capability gap"
+  - "能力缺口"
+  - "缺什么能力"
+  - "gap detection"
+
+inputs:
+  required: []
+  optional:
+    - target: "Specific path or domain to analyze (default: entire system)"
+    - scope: "Focus: tools | guardrails | abstractions | docs | all (default: all)"
+
+steps:
+  # === Phase 1: Collect + Analyze (discover) ===
+  - id: collect-failure-signals
+    stage: discover
+    capabilities_needed: [cap-intake-brief]
+    output_type: intake-manifest
+    description: >
+      Collect evidence of capability gaps from multiple sources:
+      (1) Ghost cap references in path YAMLs — caps needed but not in active index
+      (2) Commented-out entries in capability-index.yaml — blocks without frontmatter
+      (3) Path steps with no matching L2 block at all
+      (4) Validator errors from validate_contracts.sh / validate_aliases.sh
+      (5) Known agent struggle patterns (recurring manual interventions)
+      Output: raw_signals[] with source, type, severity.
+
+  - id: map-capability-landscape
+    stage: discover
+    capabilities_needed: [cap-map-context]
+    output_type: context-map
+    gate_requires: [intake-manifest]
+    description: >
+      Map current capability coverage:
+      (1) Active caps in capability-index.yaml: count, by stage, by verb
+      (2) Total L2 blocks on disk vs registered in index
+      (3) Caps referenced by paths vs caps that exist
+      (4) Tool families in _tools/: coverage by domain
+      (5) Policies in _policies/: coverage by concern
+      Output: landscape with active/total ratios, coverage heatmap by stage.
+
+  - id: classify-gaps
+    stage: discover
+    capabilities_needed: [cap-compare-option-matrix]
+    output_type: option-matrix
+    gate_requires: [intake-manifest, context-map]
+    description: >
+      Classify each gap into one of 4 categories (per P2 framework):
+      (1) Tool gap — missing script, validator, or automation
+      (2) Guardrail gap — missing rule-*.yaml or quality gate
+      (3) Abstraction gap — missing L2 capability block
+      (4) Documentation gap — missing or incomplete block frontmatter
+      For each gap: estimate impact (how many paths affected),
+      effort (stub vs full implementation), and compound value
+      (does filling this gap enable other capabilities?).
+
+  - id: prioritize-gaps
+    stage: decide
+    capabilities_needed: [cap-plan-roadmap]
+    output_type: roadmap-mvp
+    gate_requires: [option-matrix]
+    description: >
+      Rank gaps by compound investment value:
+      Priority = (paths_affected × gap_severity) + compound_bonus
+      where compound_bonus rewards gaps that unblock other capabilities.
+      Group into tiers:
+      - T1: High impact, blocks multiple paths (fix first)
+      - T2: Medium impact, improves quality (fix next)
+      - T3: Low impact, cosmetic or aspirational (defer)
+
+  # === Phase 2: Confirm (decide) ===
+  - id: confirm-scope
+    stage: decide
+    capabilities_needed: [cap-decide-adr]
+    output_type: adr
+    gate_requires: [roadmap-mvp]
+    description: >
+      PAUSE: Present capability gap report to user.
+      Show: N total gaps, M in T1, K in T2, rest in T3.
+      User selects scope:
+      - "all" → fill all T1 + T2 gaps
+      - "t1" → only Tier 1 (high impact)
+      - "dry-run" → show what would be created
+      - cherry-pick specific gaps
+      Record decision as ADR. Do NOT proceed without confirmation.
+
+  # === Phase 3: Build (build + verify) ===
+  - id: build-missing-capabilities
+    stage: build
+    capabilities_needed: [cap-build-implementation]
+    output_type: patched-artifact
+    gate_requires: [adr]
+    description: >
+      Fill capability gaps based on confirmed scope:
+      (1) Abstraction gaps → Create L2 block .md with YAML frontmatter
+          - Add cap_id, verb, object, stage, inputs, outputs
+          - Register in capability-index.yaml
+      (2) Tool gaps → Create scripts in tools/ or enhance existing ones
+      (3) Guardrail gaps → Create rule-*.yaml in _policies/
+      (4) Documentation gaps → Add frontmatter to existing blocks
+      (5) Run tools/build_capability_index.sh to update index
+      Each creation follows skill-creator-standard naming conventions.
+
+  - id: verify-capabilities
+    stage: verify
+    capabilities_needed: [cap-decide-quality-gate]
+    output_type: gate-verdict
+    gate_requires: [patched-artifact]
+    description: >
+      Verify newly created capabilities:
+      (1) bash tools/validate_contracts.sh → 0 new errors
+      (2) bash tools/validate_aliases.sh → 0 new errors
+      (3) New blocks appear as active in capability-index.yaml
+      (4) Ghost cap references resolved for targeted paths
+      (5) bash tools/setup.sh → all OK
+      PASS = all validators clean AND ghost refs reduced.
+
+  # === Phase 4: Critic + Capture ===
+  - id: critic-review
+    stage: review
+    capabilities_needed: [cap-review-improvement]
+    output_type: improvement-review
+    gate_requires: [gate-verdict, patched-artifact]
+    description: >
+      Review capability gap closure across 5 dimensions:
+      (1) Coverage improvement: before/after active cap ratio
+      (2) Path integrity: % of paths with all caps resolvable
+      (3) Quality: new blocks have valid frontmatter contracts
+      (4) Naming compliance: all new caps follow cap-<verb>-<object>
+      (5) Compound value: did filling gaps enable new workflows?
+      Score each 0-10. PASS if all >= 7 and T1 gaps == 0.
+
+  - id: capture-result
+    stage: knowledge
+    capabilities_needed: [cap-capture-card]
+    output_type: improvement-log
+    gate_requires: [improvement-review]
+    description: >
+      Record capability gap results:
+      - Date, scope, target
+      - Before/after capability coverage dashboard
+      - Gaps found vs filled vs deferred
+      - New capabilities created (with cap_ids)
+      - Compound effects (what was unblocked)
+      - Remaining T3 gaps for future iterations
+      Print to terminal as capability health summary.
+
+branches:
+  - from: critic-review
+    condition: "ITERATE AND iterations < max_iterations AND t1_gaps_remaining >= 1"
+    goto: build-missing-capabilities
+    note: "T1 gaps still open — fill more"
+  - from: critic-review
+    condition: "PASS (all dimensions >= 7 AND t1_gaps == 0)"
+    goto: capture-result
+    note: "Capability landscape is healthy"
+  - from: critic-review
+    condition: "ITERATE AND iterations >= max_iterations"
+    goto: capture-result
+    note: "Budget exhausted — capture progress and remaining gaps"
+  - from: verify-capabilities
+    condition: "FAIL — validators report errors"
+    goto: build-missing-capabilities
+    note: "Fix broken capabilities before proceeding"
+
+applicable_policies:
+  required:
+    - rule-quality-deliverable-minimum
+    - rule-improve-verify-result
+    - rule-capability-gap-detection
+    - rule-completion-guard
+  recommended:
+    - rule-skill-build-gate
+
+quality_standards:
+  user_confirmed: "ADR exists before any capabilities created"
+  coverage_improved: "Active cap ratio increased vs baseline"
+  validators_pass: "validate_contracts.sh + validate_aliases.sh → 0 new errors"
+  naming_compliant: "All new caps follow cap-<verb>-<object> convention"
+  t1_resolved: "0 Tier 1 gaps remaining"
+
+stop_rules:
+  max_iterations: 3
+  clean_state: "all 5 critic dimensions >= 7 AND t1_gaps == 0"
+  time_budget: "Configurable via --time flag (default 1h)"
+completion_guard:
+  enabled: true
+  required_evidence: [gate-verdict, improvement-log]
+  completion_promise: "ALL_STEPS_COMPLETE"

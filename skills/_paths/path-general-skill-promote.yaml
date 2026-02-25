@@ -1,0 +1,164 @@
+id: path-general-skill-promote
+name: "Skill Promote — Backflow Merge from Repo Skills to Meta-Skills"
+domain: general
+version: 1
+outcome: "Scan repo skills → Evaluate against existing caps → Conform naming/frontmatter → Classify placement → User confirm → Merge into meta-skills → Verify → Capture"
+source: "Enables users to promote ad-hoc skills created in project repos back into the meta-skills framework as properly registered L1/L2/policy entries."
+execution_mode: solo
+parallel_groups: []
+
+description: >
+  Scans a project repo's .claude/skills/ directory for ad-hoc skill files,
+  evaluates them against existing meta-skills capabilities, checks naming and
+  frontmatter compliance, classifies where they belong in the 3-layer architecture,
+  and merges confirmed candidates into the meta-skills repo with full registration.
+
+triggers:
+  - "promote skill"
+  - "backflow"
+  - "回流"
+  - "skill promote"
+
+inputs:
+  required: []
+  optional:
+    - repo_path: "Path to the repo containing skills to promote (default: current directory)"
+    - filter: "Glob pattern to filter skill files (default: **/*.md)"
+
+steps:
+  # === Phase 1: Scan (discover) ===
+  - id: scan-repo-skills
+    stage: discover
+    capabilities_needed: [cap-intake-brief]
+    output_type: intake-manifest
+    description: >
+      Scan repo/.claude/skills/ for all .md files.
+      (1) List all skill files found
+      (2) Parse frontmatter if present
+      (3) Build inventory: file path, name, description, has_frontmatter
+
+  # === Phase 2: Evaluate (decide) ===
+  - id: evaluate-candidates
+    stage: decide
+    capabilities_needed: [cap-compare-option-matrix]
+    output_type: option-matrix
+    gate_requires: [intake-manifest]
+    description: >
+      Compare each repo skill against existing meta-skills capabilities:
+      (1) Check for duplicates (same cap_id or similar description)
+      (2) Identify truly new capabilities
+      (3) Identify improvements to existing capabilities
+      (4) Score each candidate: novelty, quality, generality
+
+  # === Phase 3: Conform (verify) ===
+  - id: conform-naming
+    stage: verify
+    capabilities_needed: [cap-decide-quality-gate]
+    output_type: gate-verdict
+    gate_requires: [option-matrix]
+    description: >
+      Check naming + frontmatter compliance for each candidate:
+      (1) Validate cap_id uses controlled verbs (verbs.yaml)
+      (2) Validate cap_id uses governed objects (objects.yaml)
+      (3) Check YAML frontmatter completeness (cap_id, input_types, output_types)
+      (4) Auto-fix non-compliant names where possible
+      (5) Flag unfixable issues for user decision
+
+  # === Phase 4: Classify (decide) ===
+  - id: classify-placement
+    stage: decide
+    capabilities_needed: [cap-decide-adr]
+    output_type: adr
+    gate_requires: [gate-verdict]
+    description: >
+      Determine target placement for each candidate:
+      - L2 atomic capability → _stages/<stage>/sub/ or _tools/<family>/
+      - L1 path template → _paths/
+      - Policy/rule → _policies/
+      Record classification rationale as ADR.
+
+  # === Phase 5: Confirm (decide) ===
+  - id: confirm-promotion
+    stage: decide
+    capabilities_needed: [cap-decide-adr]
+    output_type: adr
+    gate_requires: [adr]
+    description: >
+      PAUSE: Present promotion plan to user.
+      Show: candidate list, target placement, naming changes, estimated impact.
+      User confirms which candidates to promote. Record as ADR.
+
+  # === Phase 6: Merge (build) ===
+  - id: merge-skills
+    stage: build
+    capabilities_needed: [cap-build-implementation]
+    output_type: patched-artifact
+    gate_requires: [adr]
+    description: >
+      For each confirmed candidate:
+      (1) Copy file to target location in meta-skills
+      (2) Update skills-registry.yaml with new entries
+      (3) Update capability-index.yaml with new mappings
+      (4) Update parent SKILL.md if adding to a stage
+
+  # === Phase 7: Verify (verify) ===
+  - id: verify-promotion
+    stage: verify
+    capabilities_needed: [cap-decide-quality-gate]
+    output_type: gate-verdict
+    gate_requires: [patched-artifact]
+    description: >
+      Run validation suite:
+      (1) tools/validate_contracts.sh — all new entries pass
+      (2) tools/setup.sh — deployment succeeds
+      (3) No naming violations
+      (4) No registry inconsistencies
+
+  # === Phase 8: Capture (knowledge) ===
+  - id: capture-result
+    stage: knowledge
+    capabilities_needed: [cap-capture-card]
+    output_type: improvement-log
+    gate_requires: [gate-verdict]
+    description: >
+      Record promotion results:
+      (1) List of promoted skills with source → target mapping
+      (2) Naming changes applied
+      (3) Registry updates made
+      (4) Any candidates rejected and why
+
+branches:
+  - from: verify-promotion
+    condition: "All validations PASS"
+    goto: capture-result
+    note: "Promotion successful"
+  - from: verify-promotion
+    condition: "Some validations FAIL AND iterations < max_iterations"
+    goto: merge-skills
+    note: "Fix issues and retry"
+  - from: verify-promotion
+    condition: "iterations >= max_iterations"
+    goto: capture-result
+    note: "Budget exhausted — capture partial progress"
+
+applicable_policies:
+  required:
+    - rule-quality-deliverable-minimum
+    - rule-improve-verify-result
+    - rule-skill-build-gate
+    - rule-completion-guard
+  recommended: []
+
+quality_standards:
+  naming_compliant: "All promoted skills use controlled verbs and objects"
+  contracts_valid: "All promoted skills have complete YAML frontmatter"
+  registry_consistent: "skills-registry.yaml and capability-index.yaml updated"
+  deployment_clean: "setup.sh + validate_contracts.sh PASS"
+
+stop_rules:
+  max_iterations: 2
+  all_pass: "All validations PASS"
+completion_guard:
+  enabled: true
+  required_evidence: [gate-verdict, improvement-log]
+  completion_promise: "ALL_STEPS_COMPLETE"

@@ -1,0 +1,86 @@
+# Capability Index — Maps cap-* IDs to block files
+# Core capabilities for the public meta-skills framework
+#
+# Format: cap-<verb>-<object> → list of block files
+# When multiple blocks implement the same capability, resolver picks by leveling.
+# Blocks with cap_contract: true have YAML frontmatter for contract validation.
+
+capabilities:
+  # === DISCOVER ===
+
+  cap-intake-brief:
+    - { block: "_stages/discover/sub/intake.md", leveling: "G3-V0-P2-M3", stage: discover, cap_contract: true }
+
+  cap-extract-brief:
+    - { block: "_stages/discover/sub/brief.md", leveling: "G3-V0-P2-M3", stage: discover, cap_contract: true }
+
+  cap-extract-requirements:
+    - { block: "_stages/discover/sub/requirements.md", leveling: "G3-V0-P2-M3", stage: discover, cap_contract: true }
+
+  # === DECIDE ===
+
+  cap-decide-adr:
+    - { block: "_stages/decide/sub/adr.md", leveling: "G3-V0-P2-M3", stage: decide, cap_contract: true }
+
+  cap-compare-option-matrix:
+    - { block: "_stages/decide/sub/option-matrix.md", leveling: "G3-V0-P1-M2", stage: decide, cap_contract: true }
+
+  cap-plan-exec-plan:
+    - { block: "_stages/decide/sub/exec-plan.md", leveling: "G3-V1-P1-M1", stage: decide, cap_contract: true }
+
+  # === BUILD ===
+
+  cap-scaffold-experiment:
+    - { block: "_stages/build/sub/scaffold.md", leveling: "G3-V1-P2-M3", stage: build, cap_contract: true }
+
+  cap-build-implementation:
+    - { block: "_stages/build/sub/implementation.md", leveling: "G3-V0-P2-M3", stage: build, cap_contract: true }
+
+  cap-map-tasks:
+    - { block: "_stages/build/sub/task-decomposition.md", leveling: "G3-V1-P2-M3", stage: build, cap_contract: true }
+
+  # === VERIFY ===
+
+  cap-decide-quality-gate:
+    - { block: "_stages/verify/sub/quality-gate.md", leveling: "G3-V0-P3-M3", stage: verify, cap_contract: true }
+
+  cap-assemble-evidence-bundle:
+    - { block: "_stages/verify/sub/evidence-bundle.md", leveling: "G3-V0-P2-M3", stage: verify, cap_contract: true }
+
+  cap-plan-test:
+    - { block: "_stages/verify/sub/test-plan.md", leveling: "G3-V1-P2-M3", stage: verify, cap_contract: true }
+
+  # === DELIVER ===
+
+  cap-package-output:
+    - { block: "_stages/deliver/sub/package.md", leveling: "G3-V0-P2-M3", stage: deliver, cap_contract: true }
+
+  cap-publish-release:
+    - { block: "_stages/deliver/sub/release-notes.md", leveling: "G2-V1-P1-M1", stage: deliver, cap_contract: true }
+
+  # === OPERATE ===
+
+  cap-build-runbook:
+    - { block: "_stages/operate/sub/runbook.md", leveling: "G3-V1-P2-M3", stage: operate, cap_contract: true }
+
+  cap-build-observability:
+    - { block: "_stages/operate/sub/observability.md", leveling: "G3-V1-P2-M3", stage: operate, cap_contract: true }
+
+  # === REVIEW ===
+
+  cap-review-improvement:
+    - { block: "_stages/review/sub/improvement-critic.md", leveling: "G3-V1-P1-M1", stage: review, cap_contract: true }
+
+  cap-decide-gate:
+    - { block: "_stages/review/sub/decision-gate.md", leveling: "G3-V0-P1-M1", stage: review, cap_contract: true }
+
+  # === KNOWLEDGE ===
+
+  cap-capture-card:
+    - { block: "_stages/knowledge/sub/capture.md", leveling: "G3-V0-P2-M3", stage: knowledge, cap_contract: true }
+
+  cap-sync-hub:
+    - { block: "_stages/knowledge/sub/hub-sync.md", leveling: "G3-V1-P1-M1", stage: knowledge, cap_contract: true }
+
+  cap-sync-index:
+    - { block: "_stages/knowledge/sub/index.md", leveling: "G3-V1-P2-M3", stage: knowledge, cap_contract: true }

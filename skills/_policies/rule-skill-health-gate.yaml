@@ -1,0 +1,66 @@
+id: rule-skill-health-gate
+scope: skill
+intent: enforce-skill-health-standards
+version: "1.0"
+description: |
+  /improve skill health 运行时的质量门禁。
+  - 6 维度健康检查必须全部执行
+  - 不达标维度必须 PAUSE 确认后才能修复
+  - 修复后必须重新验证
+  - 健康报告必须沉淀为 knowledge
+
+triggers:
+  - output_type: improvement-log
+  - keywords: [health, skill health, skill audit]
+
+rules:
+  # Rule 1: 6维度全覆盖
+  six-dimension-coverage:
+    severity: WARN
+    message: |
+      健康检查必须覆盖全部 6 个维度:
+      1. Naming — 命名合规 (verbs.yaml + objects.yaml)
+      2. Contracts — 合约完整 (YAML frontmatter)
+      3. Registry — 注册一致 (registry ↔ index ↔ filesystem)
+      4. Deployment — 部署健康 (setup.sh)
+      5. Coverage — 覆盖缺口 (ghost caps, missing paths)
+      6. Dedup — 重复熵 (path similarity, cap overlap)
+    check: |
+      Dashboard 输出必须包含 6 行，每行有 Score + Status + Top Issue.
+      缺少任何维度 → WARN, 不阻塞但标记为 incomplete.
+
+  # Rule 2: PAUSE before fix
+  pause-before-fix:
+    severity: BLOCK
+    message: |
+      健康检查结果必须暂停给用户确认:
+      - 展示 6 维度分数 + 整体评级
+      - 列出 top-5 关键问题
+      - 用户明确确认后才能开始修复
+    check: |
+      confirm-fixes 步骤必须执行且得到用户回复.
+      未经确认直接修复 → BLOCK.
+
+  # Rule 3: 修复后重新验证
+  verify-after-fix:
+    severity: BLOCK
+    message: |
+      任何修复操作后必须重新运行验证:
+      (1) tools/setup.sh → 无 FAIL
+      (2) tools/validate_contracts.sh → 无报错
+      (3) 修复的维度重新评分 ≥ 原分数
+    check: |
+      verify-clean 步骤 PASS.
+      如果修复后分数反而降低 → BLOCK, 回滚修复.
+
+  # Rule 4: 健康报告沉淀
+  health-report-capture:
+    severity: WARN
+    message: |
+      健康检查完成后应沉淀为 knowledge:
+      - 位置: knowledge/3-layer-skill/health-reports/
+      - 格式: health-report-<yyyymmdd>.md
+      - 内容: 6维分数 + 整体评级 + 关键问题 + 修复记录 + 趋势
+    check: |
+      capture-result 步骤执行且产出 improvement-log.
+      缺少 → WARN, 不阻塞.

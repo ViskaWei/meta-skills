@@ -1,0 +1,67 @@
+# Execution Modes for L1 Path Templates
+# Created: 2026-02-24
+# Purpose: Classify paths by execution complexity for Smart Router team dispatch
+#
+# References:
+#   - Agent Cascade (arXiv 2505.18286): hybrid single/multi-agent routing
+#   - Agentic Lybic (arXiv 2509.11067): tiered reasoning with DAG decomposition
+#   - Claude Code Team/Task system: native agent team primitives
+
+execution_modes:
+  direct:
+    description: "Single agent, sequential step execution"
+    when: "≤6 steps, no parallelizable groups, all steps have linear dependencies"
+    cost_multiplier: "1x"
+    depth_override:
+      fast: direct
+      standard: direct
+      deep: direct
+
+  team:
+    description: "Multi-agent team execution with parallel groups"
+    when: "≥7 steps with parallelizable groups, or explicit cross-domain composition"
+    cost_multiplier: "3-4x tokens"
+    depth_override:
+      fast: direct    # downgrade to direct for speed
+      standard: team
+      deep: team
+    requires:
+      - "parallel_groups field defined in path YAML"
+      - "rule-team-dispatch policy auto-injected"
+
+  auto:
+    description: "Router decides based on --depth flag and step count"
+    when: "Path could benefit from either mode depending on context"
+    decision_logic: |
+      if --depth == fast:     execute as direct
+      if --depth == deep:     execute as team (if parallel_groups not empty)
+      if --depth == standard:
+        if step_count > 8 AND len(parallel_groups) > 0: team
+        else: direct
+
+classification_criteria:
+  direct_signals:
+    - "step_count <= 6"
+    - "all steps have linear gate_requires chain (A→B→C→D)"
+    - "no parallel_groups defined"
+    - "single domain (paper OR repo OR docs OR standards)"
+
+  team_signals:
+    - "step_count >= 7 with non-empty parallel_groups"
+    - "multiple independent verification/audit steps"
+    - "cross-domain composition (e.g. research + paper)"
+    - "meta-orchestrator pattern (invokes sub-paths)"
+    - "≥3 independent steps with shared merge point"
+
+parallel_groups_schema:
+  description: "Declares which steps can execute concurrently"
+  format: |
+    parallel_groups:
+      - id: <group-name>           # kebab-case identifier
+        steps: [<step-id>, ...]    # step IDs from this path's steps[]
+        merge_at: <step-id>        # step that gate_requires all parallel outputs
+  rules:
+    - "Steps in a group MUST NOT have gate_requires dependencies on each other"
+    - "merge_at step MUST gate_require all parallel step output_types"
+    - "A step can only appear in ONE parallel group"
+    - "Sequential steps between groups are executed by the team leader"

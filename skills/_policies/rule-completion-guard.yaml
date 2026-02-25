@@ -1,0 +1,43 @@
+id: rule-completion-guard
+name: "Completion Guard — 完成保证"
+version: 1
+scope: cross-cutting
+description: >
+  强制保证任务完成。在每个 path 的最后一步之前注入完成检查。
+  不是建议，是硬性要求。当 completion-guard 插件已安装时，
+  此策略由 stop-hook 机械强制执行。
+
+triggers:
+  output_types: ["*"]
+
+injection_point:
+  before_step: capture-result
+  verify_capabilities:
+    - cap-check-evidence-completeness
+
+gate_criteria:
+  - "所有 path 步骤已执行（无跳过）"
+  - "所有 required_evidence 存在且非空"
+  - "verify 步骤已执行且 verdict 不是 FAIL"
+  - "PAUSE 步骤有用户确认记录（ADR 存在）"
+
+evidence_requirements:
+  - type: gate-verdict
+    description: "验证步骤产出的通过/失败判定"
+  - type: improvement-log
+    description: "变更记录和前后对比（如适用）"
+
+enforcement:
+  level: mechanical
+  mechanism: stop-hook
+  state_file: ".claude/completion-guard.local.md"
+  plugin: completion-guard
+
+post_pause_recovery:
+  - "重新读取剩余步骤列表"
+  - "从 PAUSE 后的下一步继续"
+  - "不跳过 verify/critic/capture"
+
+completion_signal:
+  tag: "<promise>ALL_STEPS_COMPLETE</promise>"
+  condition: "所有 gate_criteria 满足且所有 evidence_requirements 存在"

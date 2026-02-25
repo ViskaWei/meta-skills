@@ -1,0 +1,171 @@
+id: path-standards-session-to-rule
+name: "Session → Rule — Distill Session Knowledge into Acceptance Criteria"
+domain: standards
+version: 1
+outcome: "Session log → Pattern extraction → Conflict check → Deployed rule/policy → Knowledge capture"
+source: "NEW — captures session learnings as reusable acceptance criteria (rules/policies)"
+execution_mode: team
+parallel_groups: []
+
+description: >
+  Triggered by `/capture rule`. When no additional context is given, summarize the
+  current session's conversation history and distill actionable standards into a
+  rule-<scope>-<intent>.yaml policy file. The rule becomes an acceptance criterion
+  for future work. If a future rule or workflow conflicts with this rule, the system
+  must notify the user.
+
+triggers:
+  - "capture rule"
+  - "沉淀规则"
+  - "session to rule"
+  - "distill rule"
+
+steps:
+  # === Phase 1: Extract session knowledge (discover) ===
+  - id: extract-session-context
+    stage: discover
+    capabilities_needed: [cap-extract-brief]
+    output_type: brief
+    description: >
+      Summarize the current session's conversation history:
+      1. Scan full session log (all user messages + assistant actions + tool results)
+      2. Identify: key decisions made, problems encountered, solutions found
+      3. Extract: patterns observed, anti-patterns discovered, workflows that emerged
+      4. Note: any standards, conventions, or quality criteria discussed
+      Produce a structured brief of session learnings.
+      If session is short or lacks actionable content → STOP and inform user.
+
+  # === Phase 2: Derive acceptance criteria (decide) ===
+  - id: derive-acceptance-criteria
+    stage: decide
+    capabilities_needed: [cap-extract-requirements]
+    output_type: requirements-list
+    gate_requires: [brief]
+    description: >
+      From the session brief, extract candidate acceptance criteria:
+      - MUST rules: what should ALWAYS be done
+      - MUST NOT rules: what should NEVER be done (anti-patterns)
+      - GATE rules: what checks should be enforced at gate points
+      Format each criterion as:
+        - Testable (binary pass/fail)
+        - Scoped (which artifact types it applies to)
+        - Actionable (how to verify compliance)
+      Present candidates to user for confirmation before proceeding.
+
+  # === Phase 3: Conflict check against existing rules (verify) ===
+  - id: check-existing-rules
+    stage: verify
+    capabilities_needed: [cap-compare-option-matrix]
+    output_type: option-matrix
+    gate_requires: [requirements-list]
+    description: >
+      Scan ALL existing rules in _policies/rule-*.yaml:
+      1. For each candidate criterion, check:
+         - DUPLICATE: an existing rule already covers this → suggest skip or merge
+         - CONFLICT: candidate contradicts an existing rule → NOTIFY USER, halt
+         - COMPLEMENT: candidate extends an existing rule → suggest amending
+         - NOVEL: no overlap → proceed to create new rule
+      2. Also check conflict_watch fields in existing rules for related concerns
+      3. Produce conflict-matrix: [candidate] × [existing-rule] → relationship
+      If CONFLICT found → present both rules to user, ask for resolution.
+      Do NOT proceed past a conflict without explicit user decision.
+
+  # === Phase 4: Draft the rule YAML (build) ===
+  - id: draft-rule-yaml
+    stage: build
+    capabilities_needed: [cap-build-implementation]
+    output_type: patched-artifact
+    gate_requires: [option-matrix]
+    description: >
+      Create rule-<scope>-<intent>.yaml in _policies/ following the policy schema:
+        id: rule-<scope>-<intent>
+        name: "<readable name>"
+        version: 1
+        description: "<what this rule enforces and why>"
+        session_origin:
+          date: <YYYY-MM-DD>
+          session_summary: "<1-2 sentence context>"
+        triggers:
+          output_types: [<artifact-type(s) this rule applies to>]
+        evidence_requirements:
+          - type: <evidence-type>
+            description: "<what must be provided>"
+            required: true
+        gate_criteria:
+          - "<testable criterion 1>"
+          - "<testable criterion 2>"
+        conflict_watch:
+          - rule_id: <related-rule-id>
+            relationship: <complement|extends|supersedes>
+            note: "<why they are related>"
+        injection_point:
+          before_step: quality-gate
+          verify_capabilities: ["<relevant-check-capability>"]
+
+      Naming: scope from the domain, intent from the core concern.
+      Ensure conflict_watch lists all rules identified in check step.
+
+  # === Phase 5: Deploy and validate (verify) ===
+  - id: deploy-and-validate
+    stage: verify
+    capabilities_needed: [cap-decide-quality-gate]
+    output_type: gate-verdict
+    gate_requires: [patched-artifact]
+    description: >
+      Deploy and validate the new rule:
+      1. bash tools/setup.sh → output shows no FAIL
+      2. YAML syntax valid (no parse errors)
+      3. Rule file exists in _policies/ with correct naming
+      4. id field matches filename
+      5. All gate_criteria are testable (not vague)
+      6. conflict_watch references valid existing rule IDs
+      If FAIL → fix and re-deploy.
+
+  # === Phase 6: Knowledge capture (knowledge) ===
+  - id: capture-rule-knowledge
+    stage: knowledge
+    capabilities_needed: [cap-capture-card]
+    output_type: knowledge-card
+    gate_requires: [gate-verdict]
+    description: >
+      Create knowledge card for the new rule:
+      - What: what the rule enforces
+      - Why: session context that motivated it
+      - How: which L0 commands / artifact types trigger it
+      - Conflict watch: related rules to monitor
+      - Example: concrete pass/fail scenario
+      Save to knowledge/3-layer-skill/L2/<rule-id>.md
+
+branches:
+  - from: deploy-and-validate
+    condition: "FAIL AND iterations < max_iterations"
+    goto: draft-rule-yaml
+    note: "Fix deployment issues and re-deploy"
+  - from: deploy-and-validate
+    condition: "PASS"
+    goto: capture-rule-knowledge
+  - from: check-existing-rules
+    condition: "CONFLICT AND user_resolves=merge"
+    goto: draft-rule-yaml
+    note: "User chose to merge — amend existing rule instead of creating new"
+
+applicable_policies:
+  required:
+    - rule-quality-deliverable-minimum
+    - rule-completion-guard
+  recommended:
+    - rule-capability-gap-detection
+
+stop_rules:
+  max_iterations: 3
+  conflict_halt: "CONFLICT found → halt until user resolves"
+
+quality_standards:
+  testable_criteria: "Every gate_criterion must be binary pass/fail"
+  conflict_checked: "All existing rules scanned before creating new"
+  user_confirmed: "Acceptance criteria confirmed by user"
+  deployed: "setup.sh completes without FAIL"
+completion_guard:
+  enabled: true
+  required_evidence: [gate-verdict, knowledge-card]
+  completion_promise: "ALL_STEPS_COMPLETE"

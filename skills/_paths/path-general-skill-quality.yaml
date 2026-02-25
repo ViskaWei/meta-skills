@@ -1,0 +1,184 @@
+id: path-general-skill-quality
+name: "Skill Quality Improvement Loop"
+domain: general
+version: 1
+outcome: "Existing skill → Standards audit → User-confirmed improvements → Enhanced skill → Deployment verified"
+source: "Skill-specific /improve path — audits against skill-creator-standard, validates contracts, verifies deployment"
+execution_mode: team
+parallel_groups:
+  - id: audit-parallel
+    steps: [audit-standards, validate-contracts, check-dedup]
+    merge_at: gap-analysis
+
+inputs:
+  required:
+    - target: "Skill target: L0 SKILL.md, L1 path YAML, L2 cap block, or rule YAML"
+  optional:
+    - scope: "Focus area: naming, completeness, consistency, contracts, all (default: all)"
+
+steps:
+  # === Phase 1: Audit (discover + verify) ===
+  - id: read-skill
+    stage: discover
+    capabilities_needed: [cap-intake-brief]
+    output_type: intake-manifest
+    description: >
+      Deep-read target skill + all dependencies:
+      (1) SKILL.md / path YAML / cap block / rule YAML
+      (2) Registry entries (skills-registry.yaml, capability-index.yaml)
+      (3) Referenced L2 blocks, parent skill routing table
+      (4) skill-creator-standard as the quality benchmark
+
+  - id: audit-standards
+    stage: discover
+    capabilities_needed: [cap-extract-standards-scout]
+    output_type: standards-pack
+    gate_requires: [intake-manifest]
+    description: >
+      Load skill-creator-standard/SKILL.md as the authoritative reference.
+      Check: naming convention (verbs.yaml, objects.yaml), YAML frontmatter,
+      artifact contracts, gate wiring, leveling tags, trigger coverage.
+
+  - id: validate-contracts
+    stage: verify
+    capabilities_needed: [cap-decide-quality-gate]
+    output_type: gate-verdict
+    gate_requires: [intake-manifest]
+    description: >
+      Run deterministic checks:
+      (1) tools/validate_contracts.sh — YAML frontmatter contracts
+      (2) Naming lint — kebab-case, controlled vocabulary, correct prefix
+      (3) Registry completeness — capability ID in capability-index, path ID in CATALOG
+      (4) No orphan references — all referenced blocks exist
+
+  - id: check-dedup
+    stage: discover
+    capabilities_needed: [cap-compare-option-matrix]
+    output_type: option-matrix
+    gate_requires: [intake-manifest]
+    description: >
+      Check for path-level duplication (always runs as part of skill quality):
+      (1) If target is L1 path: compute Jaccard similarity with all other paths
+      (2) Flag paths that differ by ≤2 L2 capabilities as MERGE candidates
+      (3) If target is L2 cap: check if it's referenced by similar paths
+      (4) Include dedup findings in gap analysis
+      Skip silently if target is rule or no similar paths found.
+
+  - id: gap-analysis
+    stage: discover
+    capabilities_needed: [cap-compare-option-matrix]
+    output_type: option-matrix
+    gate_requires: [intake-manifest, standards-pack, gate-verdict, option-matrix]
+    description: >
+      Current skill vs skill-creator-standard gap matrix.
+      Categories: naming, structure, contracts, registry, docs, tests, dedup.
+      Score each gap on impact × effort.
+      Includes dedup findings from check-dedup step.
+
+  # === Phase 2: Confirm (decide) ===
+  - id: confirm-direction
+    stage: decide
+    capabilities_needed: [cap-decide-adr]
+    output_type: adr
+    gate_requires: [option-matrix]
+    description: >
+      PAUSE: Present audit findings + gap matrix to user.
+      User confirms which improvements to apply and priority order.
+      Record as ADR. Do NOT proceed without confirmation.
+
+  - id: plan-improvements
+    stage: decide
+    capabilities_needed: [cap-plan-roadmap]
+    output_type: roadmap-mvp
+    gate_requires: [adr]
+    description: >
+      Ordered plan: naming fixes, missing fields, registry updates,
+      doc improvements, contract additions, test coverage.
+
+  # === Phase 3: Improve loop (build + verify + review) ===
+  - id: apply-improvements
+    stage: build
+    capabilities_needed: [cap-build-implementation]
+    output_type: patched-artifact
+    gate_requires: [roadmap-mvp]
+    description: >
+      Apply improvements: update YAML, .md blocks, registry entries,
+      capability-index.yaml. Follow skill-creator-standard exactly.
+
+  - id: verify-deployment
+    stage: verify
+    capabilities_needed: [cap-decide-quality-gate]
+    output_type: gate-verdict
+    gate_requires: [patched-artifact]
+    description: >
+      Run full verification:
+      (1) tools/setup.sh — deployment succeeds, all OK
+      (2) tools/validate_contracts.sh — contracts valid
+      (3) No regressions in existing skills
+
+  - id: critic-review
+    stage: review
+    capabilities_needed: [cap-review-improvement]
+    output_type: improvement-review
+    gate_requires: [gate-verdict, patched-artifact]
+    description: >
+      Adversarial review of skill quality:
+      (1) Naming correct per controlled vocabulary?
+      (2) Contracts complete and valid?
+      (3) Registry entries consistent?
+      (4) Deployment clean?
+      (5) Missing coverage or edge cases?
+      (6) Dedup: any merge candidates identified?
+
+  # === Phase 4: Capture (knowledge) ===
+  - id: capture-result
+    stage: knowledge
+    capabilities_needed: [cap-capture-card]
+    output_type: improvement-log
+    gate_requires: [improvement-review]
+    description: >
+      Record: audit findings, changes applied, deployment status,
+      remaining gaps, lessons for skill creation.
+
+branches:
+  - from: critic-review
+    condition: "ITERATE AND iterations < max_iterations AND skill_quality_gaps >= 1"
+    goto: plan-improvements
+    note: "Critic found issues — loop back"
+  - from: critic-review
+    condition: "PASS (naming OK AND contracts valid AND registry complete AND deployed)"
+    goto: capture-result
+    note: "Skill meets quality bar"
+  - from: critic-review
+    condition: "ITERATE AND iterations >= max_iterations"
+    goto: capture-result
+    note: "Budget exhausted — capture progress"
+  - from: verify-deployment
+    condition: "FAIL — deployment or contract errors"
+    goto: apply-improvements
+    note: "Fix deployment issues before proceeding"
+
+applicable_policies:
+  required:
+    - rule-quality-deliverable-minimum
+    - rule-improve-verify-result
+    - rule-skill-build-gate
+    - rule-completion-guard
+  recommended: []
+
+quality_standards:
+  user_confirmed: "ADR exists before any changes applied"
+  naming_correct: "All IDs follow controlled vocabulary (verbs.yaml, objects.yaml)"
+  contracts_valid: "validate_contracts.sh PASS"
+  registry_complete: "All entries in skills-registry.yaml and capability-index.yaml"
+  deployment_ok: "setup.sh runs without errors"
+  no_regressions: "Existing functionality preserved"
+
+stop_rules:
+  max_iterations: 3
+  skill_quality: "naming OK AND contracts valid AND registry complete AND deployed"
+  time_budget: "Configurable via --time flag (default 1h)"
+completion_guard:
+  enabled: true
+  required_evidence: [gate-verdict, improvement-log]
+  completion_promise: "ALL_STEPS_COMPLETE"

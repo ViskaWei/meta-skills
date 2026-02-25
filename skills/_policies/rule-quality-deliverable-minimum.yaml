@@ -1,0 +1,24 @@
+id: rule-quality-deliverable-minimum
+name: "Deliverable Minimum Quality"
+version: 1
+description: >
+  Baseline quality gate for ALL deliverables. Extracted from deliver/sub/package.md
+  done criteria and verify/sub/quality-gate.md mandatory checks.
+triggers:
+  output_types: ["*"]
+evidence_requirements:
+  - type: evidence-bundle
+    description: "Evidence bundle must exist and be non-empty"
+    required: true
+  - type: reproduction-steps
+    description: "All evidence items have command + expected + actual"
+    required: true
+gate_criteria:
+  - "Evidence bundle exists and is non-empty"
+  - "All evidence items have command + expected + actual"
+  - "Reproduction steps are complete (no missing steps)"
+  - "No evidence item has verdict FAIL"
+  - "Artifact is accessible and non-corrupt"
+injection_point:
+  before_step: quality-gate
+  verify_capabilities: [cap-check-evidence-completeness]

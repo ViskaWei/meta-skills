@@ -1,0 +1,213 @@
+id: path-general-skill-health
+name: "Skill System Health Dashboard"
+domain: harness
+version: 1
+outcome: "Skill system → 6-dimension health scan → Dashboard report → PAUSE → Auto-fix critical issues → Verified clean"
+source: "System-wide skill health assessment. Unlike path-general-entropy-cleanup (general system), this focuses on skill-specific semantics: naming, contracts, registry consistency, deployment, coverage, and dedup."
+execution_mode: team
+parallel_groups:
+  - id: health-dimensions
+    steps: [check-naming, check-contracts, check-registry, check-deployment, check-coverage, check-dedup]
+    merge_at: synthesize-dashboard
+
+inputs:
+  required: []
+  optional:
+    - scope: "Focus scope: all (default), stage:<name>, domain:<name>, or layer:L0|L1|L2"
+    - threshold: "Health score threshold for PASS (default: 80)"
+
+steps:
+  # === Phase 1: Inventory (discover) ===
+  - id: inventory-scan
+    stage: discover
+    capabilities_needed: [cap-intake-brief]
+    output_type: intake-manifest
+    description: >
+      Full inventory of the skill system:
+      (1) Count L0 entries, L1 paths, L2 caps, rules, tools
+      (2) Parse skills-registry.yaml for all entries
+      (3) Parse capability-index.yaml for all cap mappings
+      (4) Parse _paths/CATALOG.md for path catalog
+      (5) If scope is specified, filter to matching subset
+
+  # === Phase 2: 6-Dimension Health Metrics (verify) ===
+  - id: check-naming
+    stage: verify
+    capabilities_needed: [cap-decide-quality-gate]
+    output_type: gate-verdict
+    gate_requires: [intake-manifest]
+    description: >
+      Dimension 1 — Naming Compliance:
+      (1) All cap-* IDs use controlled verbs (verbs.yaml) and objects (objects.yaml)
+      (2) All path-* IDs follow path-<domain>-<outcome> pattern
+      (3) All rule-* IDs follow rule-<scope>-<intent> pattern
+      (4) File names are kebab-case, no underscores except _ prefix dirs
+      Score: compliant / total × 100
+
+  - id: check-contracts
+    stage: verify
+    capabilities_needed: [cap-decide-quality-gate]
+    output_type: gate-verdict
+    gate_requires: [intake-manifest]
+    description: >
+      Dimension 2 — Contract Integrity:
+      (1) Run tools/validate_contracts.sh
+      (2) Every L2 block has YAML frontmatter with cap_id, input_types, output_types
+      (3) Every L1 path YAML has required fields (id, steps, branches, applicable_policies)
+      Score: valid / total × 100
+
+  - id: check-registry
+    stage: verify
+    capabilities_needed: [cap-decide-quality-gate]
+    output_type: gate-verdict
+    gate_requires: [intake-manifest]
+    description: >
+      Dimension 3 — Registry Consistency:
+      (1) Every L2 block file has matching entry in skills-registry.yaml
+      (2) Every registry cap_id exists in capability-index.yaml
+      (3) Every capability-index entry points to an existing block file
+      (4) No duplicate cap_ids across different blocks
+      (5) No ghost references (paths referencing non-existent caps)
+      Score: consistent / total × 100
+
+  - id: check-deployment
+    stage: verify
+    capabilities_needed: [cap-decide-quality-gate]
+    output_type: gate-verdict
+    gate_requires: [intake-manifest]
+    description: >
+      Dimension 4 — Deployment Health:
+      (1) tools/setup.sh runs without errors
+      (2) All visible skills have SKILL.md at target
+      (3) All _stages/ directories copied correctly
+      (4) Symlinks (_tools, registry) are valid
+      Score: deployed / expected × 100
+
+  - id: check-coverage
+    stage: verify
+    capabilities_needed: [cap-decide-quality-gate]
+    output_type: gate-verdict
+    gate_requires: [intake-manifest]
+    description: >
+      Dimension 5 — Coverage & Gaps:
+      (1) All 8 lifecycle stages have at least 2 capabilities
+      (2) All L0 commands have at least 1 L1 path
+      (3) Ghost caps in capability-index (commented out, needs annotation)
+      (4) Planned-but-unimplemented paths in CATALOG.md
+      Score: implemented / (implemented + gaps) × 100
+
+  - id: check-dedup
+    stage: discover
+    capabilities_needed: [cap-compare-option-matrix]
+    output_type: option-matrix
+    gate_requires: [intake-manifest]
+    description: >
+      Dimension 6 — Duplication & Entropy:
+      (1) L1 path Jaccard similarity scan (flag pairs ≥80% overlap)
+      (2) L2 caps with identical or near-identical descriptions
+      (3) Multiple cap_ids pointing to same block file
+      (4) Redundant policies (identical conditions, different names)
+      Score: unique / total × 100
+
+  # === Phase 3: Dashboard Synthesis (decide) ===
+  - id: synthesize-dashboard
+    stage: decide
+    capabilities_needed: [cap-compare-option-matrix]
+    output_type: option-matrix
+    gate_requires: [gate-verdict, option-matrix]
+    description: >
+      Aggregate 6 dimensions into health dashboard:
+      | Dimension | Score | Status | Top Issue |
+      |-----------|-------|--------|-----------|
+      | Naming    | xx%   | ✅/⚠️/❌ | ...      |
+      | Contracts | xx%   | ✅/⚠️/❌ | ...      |
+      | Registry  | xx%   | ✅/⚠️/❌ | ...      |
+      | Deploy    | xx%   | ✅/⚠️/❌ | ...      |
+      | Coverage  | xx%   | ✅/⚠️/❌ | ...      |
+      | Dedup     | xx%   | ✅/⚠️/❌ | ...      |
+      Overall: weighted average. ✅ ≥ 80, ⚠️ 60-79, ❌ < 60.
+      List top-5 critical issues ranked by impact × fixability.
+
+  - id: confirm-fixes
+    stage: decide
+    capabilities_needed: [cap-decide-adr]
+    output_type: adr
+    gate_requires: [option-matrix]
+    description: >
+      PAUSE: Present health dashboard to user.
+      Propose auto-fix plan for critical issues (❌ dimensions).
+      User confirms which fixes to apply. Record as ADR.
+
+  # === Phase 4: Auto-fix (build + verify) ===
+  - id: apply-fixes
+    stage: build
+    capabilities_needed: [cap-build-implementation]
+    output_type: patched-artifact
+    gate_requires: [adr]
+    description: >
+      Apply confirmed fixes:
+      - Naming: rename files + update references
+      - Contracts: add missing frontmatter
+      - Registry: add missing entries, remove orphans
+      - Deploy: fix broken links/copies
+      - Coverage: annotate ghost caps (comment → active)
+      - Dedup: merge flagged duplicates (with user approval)
+
+  - id: verify-clean
+    stage: verify
+    capabilities_needed: [cap-decide-quality-gate]
+    output_type: gate-verdict
+    gate_requires: [patched-artifact]
+    description: >
+      Re-run all 6 dimension checks after fixes.
+      Verify no regressions. tools/setup.sh + tools/validate_contracts.sh PASS.
+
+  # === Phase 5: Capture (knowledge) ===
+  - id: capture-result
+    stage: knowledge
+    capabilities_needed: [cap-capture-card]
+    output_type: improvement-log
+    gate_requires: [gate-verdict]
+    description: >
+      Record health report:
+      (1) Dashboard snapshot (6 scores + overall)
+      (2) Issues found and fixed
+      (3) Remaining issues (for next run)
+      (4) Trend comparison (if previous report exists)
+
+branches:
+  - from: verify-clean
+    condition: "ALL dimensions ≥ threshold"
+    goto: capture-result
+    note: "System is healthy"
+  - from: verify-clean
+    condition: "Some dimensions still ❌ AND iterations < max_iterations"
+    goto: confirm-fixes
+    note: "Still unhealthy — propose more fixes"
+  - from: verify-clean
+    condition: "iterations >= max_iterations"
+    goto: capture-result
+    note: "Budget exhausted — capture progress"
+
+applicable_policies:
+  required:
+    - rule-quality-deliverable-minimum
+    - rule-improve-verify-result
+    - rule-skill-health-gate
+    - rule-completion-guard
+  recommended: []
+
+quality_standards:
+  health_threshold: "All 6 dimensions score ≥ threshold (default 80%)"
+  no_critical_issues: "No ❌ dimensions remaining after fixes"
+  deployment_clean: "setup.sh + validate_contracts.sh PASS"
+  trend_positive: "Overall score ≥ previous run (if exists)"
+
+stop_rules:
+  max_iterations: 2
+  health_pass: "All 6 dimensions ≥ threshold"
+  time_budget: "Configurable via --time flag (default 1h)"
+completion_guard:
+  enabled: true
+  required_evidence: [gate-verdict, improvement-log]
+  completion_promise: "ALL_STEPS_COMPLETE"

@@ -1,0 +1,369 @@
+version: "3.0.0"
+description: "8-Stage Lifecycle Skill System — 3-Layer Architecture (Public Core)"
+author: "Viska Wei"
+created: "2026-02-24"
+updated: "2026-02-24"
+
+# === Naming Convention (v3) ===
+naming_convention:
+  layer_a: "cap-<verb>-<object>"
+  layer_b: "path-<domain>-<outcome>"
+  layer_c: "run-<path-id>-<context>-<yyyymmdd>-<seq>"
+  policies: "rule-<scope>-<intent>"
+
+verb_governance: "_resolver/verbs.yaml"
+object_governance: "_resolver/objects.yaml"
+
+controlled_verbs:
+  - intake
+  - extract
+  - map
+  - compare
+  - decide
+  - plan
+  - scaffold
+  - build
+  - render
+  - assemble
+  - check
+  - package
+  - publish
+  - track
+  - triage
+  - review
+  - capture
+  - sync
+
+# === Lifecycle Stages ===
+stages:
+  - id: discover
+    title: "Discover"
+    description: "Turn vague goals into actionable briefs"
+    gate_produces: "brief"
+    path: "skills/_stages/discover/SKILL.md"
+    skills:
+      - id: brief
+        cap_id: cap-extract-brief
+        title: "Discovery Brief"
+        file: "sub/brief.md"
+        triggers: ["start project", "new task", "brief"]
+        output: "1-page Brief"
+        input_types: [goal-statement]
+        output_types: [brief]
+        policies: [rule-quality-deliverable-minimum]
+        leveling: G3-V0-P2-M3
+      - id: intake
+        cap_id: cap-intake-brief
+        title: "Input Manifest"
+        file: "sub/intake.md"
+        triggers: ["intake", "input"]
+        output: "Input manifest"
+        input_types: [url, file-path]
+        output_types: [intake-manifest]
+        leveling: G3-V0-P2-M3
+      - id: requirements
+        cap_id: cap-extract-requirements
+        title: "Requirements"
+        file: "sub/requirements.md"
+        triggers: ["spec", "requirements", "acceptance criteria"]
+        output: "Requirements list (MoSCoW)"
+        input_types: [brief, context-map]
+        output_types: [requirements-list]
+        leveling: G3-V0-P2-M3
+
+  - id: decide
+    title: "Decide"
+    description: "Compare options and record decisions"
+    gate_requires: "brief"
+    gate_produces: "adr"
+    path: "skills/_stages/decide/SKILL.md"
+    skills:
+      - id: option-matrix
+        cap_id: cap-compare-option-matrix
+        title: "Option Matrix"
+        file: "sub/option-matrix.md"
+        triggers: ["compare", "matrix", "trade-off"]
+        output: "Comparison matrix"
+        input_types: [requirements-list]
+        output_types: [option-matrix]
+        leveling: G3-V0-P2-M3
+      - id: adr
+        cap_id: cap-decide-adr
+        title: "Architecture Decision Record"
+        file: "sub/adr.md"
+        triggers: ["adr", "decision"]
+        output: "ADR document"
+        input_types: [option-matrix]
+        output_types: [adr]
+        leveling: G3-V0-P2-M3
+      - id: exec-plan
+        cap_id: cap-plan-exec-plan
+        title: "Execution Plan"
+        file: "sub/exec-plan.md"
+        triggers: ["exec plan", "execution plan"]
+        output: "Concrete execution plan with timeline and dependencies"
+        input_types: [roadmap-mvp, milestone-plan]
+        output_types: [exec-plan]
+        leveling: G3-V1-P1-M1
+
+  - id: build
+    title: "Build"
+    description: "Execute plans into running artifacts"
+    gate_requires: "adr"
+    path: "skills/_stages/build/SKILL.md"
+    skills:
+      - id: task-decomposition
+        cap_id: cap-map-tasks
+        title: "Task Decomposition"
+        file: "sub/task-decomposition.md"
+        triggers: ["decompose", "task list"]
+        input_types: [roadmap-mvp]
+        output_types: [task-list]
+        leveling: G3-V1-P2-M3
+      - id: scaffold
+        cap_id: cap-scaffold-experiment
+        title: "Scaffold"
+        file: "sub/scaffold.md"
+        triggers: ["scaffold", "setup", "init"]
+        input_types: [adr, roadmap-mvp]
+        output_types: [experiment-scaffold]
+        leveling: G3-V1-P2-M3
+      - id: implementation
+        cap_id: cap-build-implementation
+        title: "Implementation"
+        file: "sub/implementation.md"
+        triggers: ["implement", "build", "code"]
+        input_types: [task-list, experiment-scaffold]
+        output_types: [patched-artifact]
+        leveling: G3-V0-P2-M3
+
+  - id: verify
+    title: "Verify"
+    description: "Prove artifacts are correct with evidence"
+    gate_produces: "evidence"
+    path: "skills/_stages/verify/SKILL.md"
+    skills:
+      - id: test-plan
+        cap_id: cap-plan-test
+        title: "Test Plan"
+        file: "sub/test-plan.md"
+        input_types: [experiment-scaffold]
+        output_types: [test-plan]
+        leveling: G3-V1-P2-M3
+      - id: evidence-bundle
+        cap_id: cap-assemble-evidence-bundle
+        title: "Evidence Bundle"
+        file: "sub/evidence-bundle.md"
+        triggers: ["evidence", "proof"]
+        input_types: [experiment-log]
+        output_types: [evidence-bundle]
+        leveling: G3-V0-P2-M3
+      - id: quality-gate
+        cap_id: cap-decide-quality-gate
+        title: "Quality Gate"
+        file: "sub/quality-gate.md"
+        triggers: ["gate", "verify", "audit"]
+        input_types: [evidence-bundle]
+        output_types: [gate-verdict]
+        policies: [rule-quality-deliverable-minimum]
+        leveling: G3-V0-P3-M3
+
+  - id: deliver
+    title: "Deliver"
+    description: "Package artifacts for delivery"
+    gate_requires: "evidence"
+    gate_produces: "package"
+    path: "skills/_stages/deliver/SKILL.md"
+    skills:
+      - id: package
+        cap_id: cap-package-output
+        title: "Package"
+        file: "sub/package.md"
+        triggers: ["ship", "deliver", "package"]
+        input_types: [gate-verdict]
+        output_types: [delivery-package]
+        policies: [rule-quality-deliverable-minimum]
+        leveling: G3-V0-P2-M3
+      - id: release-notes
+        cap_id: cap-publish-release
+        title: "Release Notes"
+        file: "sub/release-notes.md"
+        input_types: [delivery-package]
+        output_types: [release-notes]
+        leveling: G3-V1-P2-M3
+
+  - id: operate
+    title: "Operate"
+    description: "Operational support and monitoring"
+    gate_requires: "package"
+    path: "skills/_stages/operate/SKILL.md"
+    skills:
+      - id: runbook
+        cap_id: cap-build-runbook
+        title: "Runbook"
+        file: "sub/runbook.md"
+        triggers: ["runbook", "ops"]
+        input_types: [delivery-package]
+        output_types: [runbook]
+        leveling: G3-V1-P2-M3
+      - id: observability
+        cap_id: cap-build-observability
+        title: "Observability"
+        file: "sub/observability.md"
+        input_types: [delivery-package]
+        output_types: [observability-config]
+        leveling: G3-V1-P2-M3
+
+  - id: review
+    title: "Review"
+    description: "Retrospectives and post-mortems"
+    gate_requires: "evidence"
+    gate_produces: "decision-gate"
+    path: "skills/_stages/review/SKILL.md"
+    skills:
+      - id: improvement-critic
+        cap_id: cap-review-improvement
+        title: "Improvement Critic"
+        file: "sub/improvement-critic.md"
+        triggers: ["critic", "improvement review"]
+        input_types: [patched-artifact, gate-verdict]
+        output_types: [improvement-review]
+        leveling: G3-V1-P1-M1
+      - id: decision-gate
+        cap_id: cap-decide-gate
+        title: "Decision Gate"
+        file: "sub/decision-gate.md"
+        triggers: ["decision gate"]
+        input_types: [experiment-retro, design-principles]
+        output_types: [decision-gate]
+        leveling: G3-V1-P2-M3
+
+  - id: knowledge
+    title: "Knowledge"
+    description: "Capture and productize project knowledge"
+    path: "skills/_stages/knowledge/SKILL.md"
+    skills:
+      - id: capture
+        cap_id: cap-capture-card
+        title: "Knowledge Capture"
+        file: "sub/capture.md"
+        triggers: ["capture", "document", "card"]
+        input_types: [experiment-retro, design-principles]
+        output_types: [knowledge-card]
+        leveling: G3-V0-P2-M3
+      - id: hub-sync
+        cap_id: cap-sync-hub
+        title: "Hub Sync"
+        file: "sub/hub-sync.md"
+        triggers: ["hub sync"]
+        input_types: [knowledge-card]
+        output_types: [hub-update]
+        leveling: G3-V1-P2-M3
+      - id: index
+        cap_id: cap-sync-index
+        title: "Index"
+        file: "sub/index.md"
+        triggers: ["index", "tag"]
+        input_types: [knowledge-card]
+        output_types: [index-entry]
+        leveling: G3-V1-P2-M3
+
+# === Domain Tools ===
+tools:
+  - id: skill
+    title: "Skill Management"
+    path: "_tools/skill/"
+    used_by: ["knowledge"]
+    capabilities: [skill-creation, skill-init]
+
+  - id: router
+    title: "Smart Router"
+    path: "_tools/router/"
+    used_by: ["workflow"]
+    capabilities: [intent-routing, path-selection]
+
+# === Policies (v2) ===
+policies:
+  - id: rule-quality-deliverable-minimum
+    file: "_policies/rule-quality-deliverable-minimum.yaml"
+    triggers: ["*"]
+  - id: rule-improve-verify-result
+    file: "_policies/rule-improve-verify-result.yaml"
+    triggers: [improvement-log]
+  - id: rule-capability-gap-detection
+    file: "_policies/rule-capability-gap-detection.yaml"
+    triggers: ["*"]
+    scope: governance
+  - id: rule-skill-build-gate
+    file: "_policies/rule-skill-build-gate.yaml"
+    triggers: [skill-artifact]
+    scope: governance
+  - id: rule-completion-guard
+    file: "_policies/rule-completion-guard.yaml"
+    triggers: ["*"]
+    scope: cross-cutting
+  - id: rule-entropy-cleanup-gate
+    file: "_policies/rule-entropy-cleanup-gate.yaml"
+    triggers: [entropy-report]
+    scope: governance
+  - id: rule-skill-health-gate
+    file: "_policies/rule-skill-health-gate.yaml"
+    triggers: [health-dashboard]
+    scope: governance
+  - id: rule-layer-dependency
+    file: "_policies/rule-layer-dependency.yaml"
+    triggers: ["*"]
+    scope: governance
+
+# === Path Templates ===
+paths:
+  - id: path-general-skill-health
+    file: "_paths/path-general-skill-health.yaml"
+    domain: general
+  - id: path-general-skill-scout-integrate
+    file: "_paths/path-general-skill-scout-integrate.yaml"
+    domain: general
+  - id: path-general-skill-quality
+    file: "_paths/path-general-skill-quality.yaml"
+    domain: general
+  - id: path-general-entropy-cleanup
+    file: "_paths/path-general-entropy-cleanup.yaml"
+    domain: general
+  - id: path-general-skill-lifecycle
+    file: "_paths/path-general-skill-lifecycle.yaml"
+    domain: general
+  - id: path-general-capability-gap
+    file: "_paths/path-general-capability-gap.yaml"
+    domain: general
+  - id: path-general-skill-annotate
+    file: "_paths/path-general-skill-annotate.yaml"
+    domain: general
+  - id: path-general-skill-promote
+    file: "_paths/path-general-skill-promote.yaml"
+    domain: general
+  - id: path-standards-session-to-rule
+    file: "_paths/path-standards-session-to-rule.yaml"
+    domain: standards
+  - id: path-general-improve-loop
+    file: "_paths/path-general-improve-loop.yaml"
+    domain: general
+
+# === System Commands ===
+# Commands that operate on the skill system itself, not user artifacts.
+# Internal routing via SKILL.md table — NOT the smart-router.
+system_commands:
+  - id: meta
+    triggers: [meta, harness, skill health, skill scout, skill quality, skill lifecycle, skill cleanup]
+    internal_routing: true
+    internal_paths:
+      - path-general-skill-health
+      - path-general-skill-scout-integrate
+      - path-general-skill-quality
+      - path-general-entropy-cleanup
+      - path-general-skill-lifecycle
+      - path-general-capability-gap
+      - path-general-skill-annotate
+      - path-general-skill-promote
+      - path-standards-session-to-rule
+    default_rules: [rule-completion-guard, rule-quality-deliverable-minimum, rule-improve-verify-result]
+    skill_path: "skills/meta/SKILL.md"

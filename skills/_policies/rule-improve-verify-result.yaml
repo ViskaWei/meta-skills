@@ -1,0 +1,38 @@
+id: rule-improve-verify-result
+name: "Improve Result Verification"
+version: 1
+description: >
+  Mandatory verification gate for /improve results.
+  Ensures improvements are research-grounded, user-confirmed, critic-reviewed, and regression-free.
+triggers:
+  output_types: [improvement-log]
+  commands: [improve]
+
+evidence_requirements:
+  - type: standards-pack
+    description: "Best-practice research was conducted (3+ sources)"
+    required: true
+  - type: option-matrix
+    description: "Gap analysis comparing current vs best practice exists"
+    required: true
+  - type: adr
+    description: "User confirmed improvement direction before changes were applied"
+    required: true
+  - type: gate-verdict
+    description: "Verify step passed — no regressions introduced"
+    required: true
+  - type: improvement-review
+    description: "Critic review completed with PASS verdict (avg >= 4.0, 0 high-priority gaps)"
+    required: true
+
+gate_criteria:
+  - "Best-practice research conducted with 3+ authoritative sources"
+  - "Gap analysis exists with impact x effort scoring"
+  - "User confirmed improvement direction (ADR recorded)"
+  - "No regressions detected in verify step"
+  - "Critic review PASS: average score >= 4.0 AND high-priority gaps == 0"
+  - "Improvement log captures before/after comparison"
+
+injection_point:
+  before_step: capture-result
+  verify_capabilities: [cap-review-improvement, cap-decide-quality-gate]

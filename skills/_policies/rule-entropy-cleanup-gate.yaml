@@ -1,0 +1,47 @@
+id: rule-entropy-cleanup-gate
+name: "Entropy Cleanup Quality Gate"
+version: 1
+description: >
+  Quality gate for periodic entropy cleanup of the 3-layer skill system.
+  Enforces minimum standards for system consistency after cleanup runs.
+  Based on Harness Engineering P3: "靠机械化执行而非文档维护一致性".
+
+triggers:
+  output_types: [entropy-report]
+
+evidence_requirements:
+  - type: validator-output
+    description: "validate_contracts.sh stdout showing 0 errors"
+    required: true
+  - type: validator-output
+    description: "validate_aliases.sh stdout showing 0 errors"
+    required: true
+  - type: diff-summary
+    description: "Before/after counts for each health metric"
+    required: true
+
+gate_criteria:
+  - "validate_contracts.sh exits with 0 errors (warnings acceptable)"
+  - "validate_aliases.sh exits with 0 errors"
+  - "No CRITICAL issues remaining in entropy report"
+  - "Capability-index active count >= previous run (no regression)"
+  - "All path-referenced capabilities exist in active index OR are documented as deferred"
+  - "0 duplicate cap_id entries in skills-registry.yaml"
+  - "0 non-kebab-case filenames in _stages/ and _tools/"
+
+conflict_watch:
+  - rule_id: rule-quality-deliverable-minimum
+    relationship: complement
+    note: "General quality minimum; entropy gate adds system-specific checks"
+  - rule_id: rule-improve-verify-result
+    relationship: complement
+    note: "Improve verify checks artifact quality; entropy gate checks system consistency"
+  - rule_id: rule-skill-build-gate
+    relationship: complement
+    note: "Skill build gate checks individual skill; entropy gate checks cross-system consistency"
+
+injection_point:
+  after_step: verify-clean
+  verify_capabilities: [cap-decide-quality-gate]
+
+recommended_cadence: "Weekly or after batch skill creation/modification"

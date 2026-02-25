@@ -1,0 +1,427 @@
+# Artifact Types Registry
+# All artifact type names used in capability contracts (inputs/outputs).
+# Enables resolver type-checking: output of step N must match input of step N+1.
+#
+# Categories follow the lifecycle stages.
+
+artifact_types:
+  # === Raw Inputs (external sources, not produced by capabilities) ===
+  raw:
+    - id: goal-statement
+      description: "User-provided goal or objective in natural language"
+      format: text
+    - id: url
+      description: "URL to external resource (arXiv, GitHub, docs)"
+      format: uri
+    - id: file-path
+      description: "Local file path to input material (PDF, code, data)"
+      format: path
+    - id: web-page
+      description: "Live web page for visual verification"
+      format: uri
+    - id: incident-report
+      description: "Report of a system incident or failure"
+      format: markdown
+    - id: code-artifact
+      description: "Source code or code artifact to verify/analyze"
+      format: code
+    - id: experiment-results
+      description: "Raw experiment output data (metrics, logs, artifacts)"
+      format: mixed
+    - id: system-spec
+      description: "System specification describing architecture, components, and interfaces"
+      format: markdown
+    - id: experiment-config
+      description: "Experiment configuration (hyperparams, sweep config, env)"
+      format: yaml-or-code
+    - id: domain-description
+      description: "Domain context description for standards scouting"
+      format: text
+    - id: path-template
+      description: "L1 path template YAML to analyze for automation opportunities"
+      format: yaml
+    - id: alternatives-list
+      description: "List of alternatives/options to compare in a decision matrix"
+      format: markdown
+    - id: data-source
+      description: "Raw data source (CSV, database, API, file collection)"
+      format: mixed
+    - id: literature-review
+      description: "Literature survey with key papers, themes, and gaps"
+      format: markdown
+    - id: model-spec
+      description: "Model architecture specification (layers, params, loss function)"
+      format: markdown
+    - id: data-spec
+      description: "Data specification (schema, format, splits, preprocessing rules)"
+      format: markdown
+
+  # === Discover Stage Outputs ===
+  discover:
+    - id: brief
+      description: "Structured project brief with problem, users, metrics, non-goals"
+      format: markdown
+      template: "artifacts/brief.md"
+    - id: intake-manifest
+      description: "Inventory of all input sources with types, versions, status"
+      format: markdown
+      template: "artifacts/intake-manifest.md"
+    - id: context-map
+      description: "System boundaries, dependencies, I/O flows, risk points"
+      format: markdown
+    - id: requirements-list
+      description: "MoSCoW-prioritized requirements with acceptance criteria"
+      format: markdown
+      template: "artifacts/requirements.md"
+    - id: problem-tree
+      description: "What/Why/Constraints/Metrics decomposition of the problem"
+      format: markdown
+    - id: hypothesis-tree
+      description: "Falsifiable hypotheses with evidence types and priorities"
+      format: markdown
+    - id: metrics-contract
+      description: "Metric definitions, formulas, thresholds, and known pitfalls"
+      format: markdown
+    - id: skim-notes
+      description: "Structured paper reading notes (15-min format)"
+      format: markdown
+    - id: risk-register
+      description: "Risk items with probability, impact, and mitigation"
+      format: markdown
+    - id: standards-pack
+      description: "Relevant standards and compliance requirements"
+      format: markdown
+    - id: citation-data
+      description: "Structured citation/bibliography data (BibTeX entries, DOI metadata)"
+      format: bibtex-or-json
+    - id: venue-template-pack
+      description: "Conference/journal template with formatting rules and submission guide"
+      format: mixed
+    - id: venue-requirements
+      description: "Extracted venue requirements (page limits, formatting, deadlines)"
+      format: markdown
+
+  # === Decide Stage Outputs ===
+  decide:
+    - id: option-matrix
+      description: "Comparison matrix of alternatives against criteria"
+      format: markdown
+    - id: adr
+      description: "Architecture Decision Record with rationale and rollback"
+      format: markdown
+      template: "artifacts/adr.md"
+    - id: narrative-adr
+      description: "ADR extended with narrative context for paper writing"
+      format: markdown
+    - id: roadmap-mvp
+      description: "MVP experiment list with stop-loss rules and dependencies"
+      format: markdown
+      template: "artifacts/roadmap.md"
+    - id: milestone-plan
+      description: "M0→M3 milestone plan with checkpoints"
+      format: markdown
+    - id: experiment-design
+      description: "Rigorous experiment design with variables, controls, metrics"
+      format: markdown
+    - id: resource-budget
+      description: "Compute, time, and personnel budget allocation"
+      format: markdown
+    - id: exec-plan
+      description: "Concrete execution plan with timeline, dependencies, and assignments"
+      format: markdown
+    - id: ml-experiment-plan
+      description: "ML experiment plan with architecture, data, training, and eval strategy"
+      format: markdown
+
+  # === Build Stage Outputs ===
+  build:
+    - id: task-list
+      description: "Decomposed task list from roadmap"
+      format: markdown
+    - id: interface-contracts
+      description: "API/interface specifications between components"
+      format: markdown
+    - id: experiment-scaffold
+      description: "Project skeleton with entry points, config, and minimal demo"
+      format: directory
+    - id: ux-map
+      description: "UX structure map with page hierarchy and flows"
+      format: markdown
+    - id: data-pipeline
+      description: "Data loading, preprocessing, and splitting implementation"
+      format: code
+    - id: model-implementation
+      description: "Model architecture and loss function implementation"
+      format: code
+    - id: eval-harness
+      description: "Evaluation script with metrics aligned to metrics-contract"
+      format: code
+    - id: paper-outline
+      description: "Paper section structure with content placeholders"
+      format: markdown
+    - id: paper-draft
+      description: "Full paper draft with text, figures, tables"
+      format: markdown-or-latex
+    - id: visualization-pack
+      description: "Collection of figures and plots for paper/report"
+      format: mixed
+    - id: results-table
+      description: "Main/ablation/comparison tables with LaTeX output"
+      format: markdown-and-latex
+    - id: slides
+      description: "Slide deck for presentations (Marp, reveal.js, Beamer, PPTX)"
+      format: markdown-or-pptx
+    - id: poster
+      description: "Scientific poster (LaTeX, HTML, or PPTX format)"
+      format: pdf-or-html
+    - id: image-render
+      description: "AI-generated or composed image"
+      format: png
+    - id: schematic-render
+      description: "Scientific diagram or schematic"
+      format: png-or-svg
+    - id: video
+      description: "Produced video from slides and voice synthesis"
+      format: mp4
+    - id: markdown-output
+      description: "Markdown-rendered content from document conversion"
+      format: markdown
+    - id: dashboard
+      description: "Interactive web dashboard (HTML/JS/CSS)"
+      format: html
+    - id: repo-explorer-app
+      description: "Interactive repository exploration web application"
+      format: html
+    - id: flowchart-render
+      description: "Rendered flowchart or diagram (D2, Mermaid, SVG)"
+      format: svg-or-png
+    - id: parallel-sweep-config
+      description: "Parallel experiment sweep configuration and runner scripts"
+      format: yaml-or-code
+    - id: audio-summary
+      description: "Audio summary or podcast-style narration"
+      format: mp3-or-wav
+    - id: enhanced-image
+      description: "Enhanced or post-processed image"
+      format: png
+    - id: architecture-gallery
+      description: "Visual gallery of code/system architecture diagrams"
+      format: html
+    - id: autonomous-agent-config
+      description: "Autonomous agent configuration and orchestration setup"
+      format: yaml-or-code
+    - id: task-tree
+      description: "Hierarchical task decomposition tree from roadmap"
+      format: markdown
+    - id: interface-contract
+      description: "Interface contract specification (API, module, component boundary)"
+      format: markdown
+    - id: model-checkpoint
+      description: "Trained model checkpoint (weights, optimizer state, config)"
+      format: binary
+
+  # === Verify Stage Outputs ===
+  verify:
+    - id: test-plan
+      description: "Test strategy with test cases and coverage targets"
+      format: markdown
+    - id: evidence-bundle
+      description: "Collection of verification evidence with reproduction steps"
+      format: markdown
+      template: "artifacts/evidence.md"
+    - id: sanity-report
+      description: "Metric sanity check results (ranges, distributions)"
+      format: markdown
+    - id: reproducibility-report
+      description: "Reproducibility verification with seed, env, results"
+      format: markdown
+    - id: structure-report
+      description: "Paper structure validation report"
+      format: markdown
+    - id: citation-report
+      description: "Citation integrity check results"
+      format: markdown
+    - id: figure-report
+      description: "Figure-table consistency check results"
+      format: markdown
+    - id: visual-evidence
+      description: "Screenshot-based visual verification evidence"
+      format: mixed
+    - id: gate-verdict
+      description: "PASS/FAIL quality gate verdict with evidence summary"
+      format: markdown
+    - id: scientific-rigor-report
+      description: "Scientific reasoning and critical thinking quality assessment"
+      format: markdown
+    - id: deliverable-audit
+      description: "General deliverable quality audit report"
+      format: markdown
+    - id: training-readiness-report
+      description: "NN training readiness assessment (data, model, infra, hyperparams)"
+      format: markdown
+    - id: numerical-validation
+      description: "Numerical accuracy and scientific computing validation report"
+      format: markdown
+    - id: scholarly-quality-report
+      description: "Scholarly writing quality and academic rigor evaluation"
+      format: markdown
+
+  # === Deliver Stage Outputs ===
+  deliver:
+    - id: delivery-package
+      description: "Versioned package with metadata and quick-start"
+      format: directory
+    - id: release-notes
+      description: "Changelog and release notes for the package"
+      format: markdown
+    - id: handoff-guide
+      description: "Operations guide for package recipient"
+      format: markdown
+    - id: demo-script
+      description: "Step-by-step demo script with expected outputs"
+      format: markdown
+    - id: paper-web-site
+      description: "Paper converted to interactive web page"
+      format: html
+    - id: interactive-research-site
+      description: "Interactive research results web publication"
+      format: html
+
+  # === Operate Stage Outputs ===
+  operate:
+    - id: experiment-log
+      description: "Ongoing experiment metrics and status log"
+      format: json-and-markdown
+    - id: observability-config
+      description: "Monitoring, logging, and alerting configuration"
+      format: yaml-or-code
+    - id: runbook
+      description: "Operational runbook with procedures and escalation"
+      format: markdown
+    - id: triage-result
+      description: "Incident triage with severity, classification, and routing"
+      format: markdown
+    - id: cost-report
+      description: "Compute cost and performance analysis"
+      format: markdown
+    - id: triage-report
+      description: "Detailed incident triage report with timeline and analysis"
+      format: markdown
+    - id: observability-plan
+      description: "Observability design plan (what to monitor, alert thresholds, dashboards)"
+      format: markdown
+    - id: telemetry-config
+      description: "Telemetry collection and metrics pipeline configuration"
+      format: yaml-or-code
+
+  # === Review Stage Outputs ===
+  review:
+    - id: experiment-retro
+      description: "Experiment retrospective with signal analysis and next steps"
+      format: markdown
+    - id: design-principles
+      description: "Extracted design principles from experiment learnings"
+      format: markdown
+    - id: decision-gate
+      description: "Go/no-go decision with evidence and rationale"
+      format: markdown
+    - id: postmortem
+      description: "Incident postmortem with root cause and action items"
+      format: markdown
+    - id: peer-review-report
+      description: "Structured peer review feedback on paper"
+      format: markdown
+    - id: editorial-report
+      description: "Editorial review with writing quality feedback"
+      format: markdown
+    - id: rebuttal-prep
+      description: "Rebuttal preparation with point-by-point responses"
+      format: markdown
+    - id: metrics-retro
+      description: "Retrospective on metric performance and calibration"
+      format: markdown
+    - id: process-improvement
+      description: "Process improvement recommendations from retro/postmortem"
+      format: markdown
+    - id: improvement-review
+      description: "Adversarial critic review with scored gap list and PASS/ITERATE verdict"
+      format: markdown
+    - id: retro-report
+      description: "Generic retrospective report with findings and action items"
+      format: markdown
+    - id: postmortem-report
+      description: "Detailed postmortem report with root cause analysis"
+      format: markdown
+    - id: improvement-plan
+      description: "Structured plan for process improvements from retro/postmortem"
+      format: markdown
+
+  # === Knowledge Stage Outputs ===
+  knowledge:
+    - id: knowledge-card
+      description: "Self-contained knowledge card with what/why/how/example"
+      format: markdown
+    - id: hub-update
+      description: "Update to knowledge hub with new card references"
+      format: markdown
+    - id: index-entry
+      description: "Index entry with tags and metadata for knowledge search"
+      format: markdown
+    - id: standards-update
+      description: "Standards library update with new standards"
+      format: markdown
+    - id: template-update
+      description: "Template library update with new/revised templates"
+      format: markdown
+    - id: learning-plan
+      description: "Learning loop plan with feedback integration points"
+      format: markdown
+    - id: template-library
+      description: "Collection of reusable templates with metadata and usage guide"
+      format: markdown
+    - id: sync-report
+      description: "Knowledge hub synchronization report with changes applied"
+      format: markdown
+
+# Total: 120 artifact types (5 raw + 12 discover + 9 decide + 26 build + 14 verify + 6 deliver + 6 operate + 10 review + 6 knowledge + 5 cross-cutting)
+# Added 2026-02-24: 5 build (slides, poster, image-render, schematic-render, video)
+# Added 2026-02-24: 3 harness-engineering (exec-plan, telemetry-config, improvement-review)
+# Added 2026-02-24 (tiering): 24 new types from _tools/ promotion
+
+  # === Cross-cutting Artifact Types (used by L0 commands) ===
+  cross_cutting:
+    - id: source-pack
+      description: "Credibility-annotated collection of sources with shortlist and next-step recommendations"
+      format: markdown
+    - id: improvement-log
+      description: "Record of iterative check-fix cycles with changes made and final verdict"
+      format: markdown
+    - id: gap-report
+      description: "Analysis of gaps between current state and acceptance criteria"
+      format: markdown
+    - id: structured-notes
+      description: "Structured reading notes with key findings, architecture, and stats"
+      format: markdown
+    - id: patched-artifact
+      description: "Artifact after fix iterations have been applied"
+      format: mixed
+
+    - id: running-service
+      description: "A running service instance (web server, API endpoint, daemon)"
+      format: mixed
+    - id: log-source
+      description: "Log output from a running service or system"
+      format: text
+    - id: metric-source
+      description: "Metrics/telemetry data source (Prometheus, StatsD, custom)"
+      format: mixed
+    - id: telemetry-report
+      description: "Aggregated telemetry analysis report with health metrics"
+      format: markdown
+    - id: entropy-report
+      description: "System consistency scan results with CRITICAL/WARNING/INFO findings"
+      format: markdown
+
+# Updated total: 130 artifact types
+# Added 2026-02-24: running-service, log-source, metric-source, telemetry-report, entropy-report
+# Added 2026-02-24: 22 missing types from validate_contracts.sh warnings

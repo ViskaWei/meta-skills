@@ -1,0 +1,482 @@
+# Object Registry — 91 canonical objects for cap-* IDs
+#
+# Rules:
+#   1. cap-* IDs MUST use an object from this registry
+#   2. Objects are the head-noun (what the verb acts on)
+#   3. Same object can pair with different verbs (e.g., cap-intake-brief, cap-extract-brief)
+#   4. kebab-case, 1-3 tokens max
+#   5. No implementation details (use "results-table" not "latex-results-table")
+#
+# Validation: tools/validate_contracts.sh checks cap_id objects against this list
+
+objects:
+  # === Discover domain ===
+  brief:
+    description: "Structured project brief or reading summary"
+    domain: [discover]
+    used_in: [cap-intake-brief, cap-extract-brief]
+
+  context:
+    description: "System boundaries, dependencies, and I/O flows"
+    domain: [discover]
+    used_in: [cap-map-context]
+
+  requirements:
+    description: "Prioritized requirements with acceptance criteria"
+    domain: [discover]
+    used_in: [cap-extract-requirements]
+
+  problem-tree:
+    description: "What/Why/Constraints/Metrics decomposition"
+    domain: [discover]
+    used_in: [cap-map-problem-tree]
+
+  hypothesis-tree:
+    description: "Falsifiable hypotheses with evidence types"
+    domain: [discover]
+    used_in: [cap-map-hypothesis-tree]
+
+  metrics-contract:
+    description: "Metric definitions, formulas, thresholds"
+    domain: [discover]
+    used_in: [cap-extract-metrics-contract]
+
+  literature-skim:
+    description: "Structured paper reading notes"
+    domain: [discover]
+    used_in: [cap-extract-literature-skim]
+
+  risk-register:
+    description: "Risk items with probability and mitigation"
+    domain: [discover]
+    used_in: [cap-extract-risk-register]
+
+  standards-scout:
+    description: "Standards and compliance requirements"
+    domain: [discover]
+    used_in: [cap-extract-standards-scout]
+  automation:
+    description: "Step-by-step LLM vs deterministic classification of a pipeline"
+    domain: [discover]
+    used_in: [cap-map-automation]
+
+  citation:
+    description: "Bibliography and citation data (BibTeX, DOI resolution)"
+    domain: [discover]
+    used_in: [cap-extract-citation]
+
+  venue-template:
+    description: "Conference/journal submission template and formatting rules"
+    domain: [discover]
+    used_in: [cap-extract-venue-template]
+
+  # === Decide domain ===
+  option-matrix:
+    description: "Comparison matrix of alternatives"
+    domain: [decide]
+    used_in: [cap-compare-option-matrix]
+
+  adr:
+    description: "Architecture Decision Record"
+    domain: [decide]
+    used_in: [cap-decide-adr]
+
+  milestones:
+    description: "M0-M3 milestone plan"
+    domain: [decide]
+    used_in: [cap-plan-milestones]
+
+  roadmap:
+    description: "MVP experiment list with stop-loss rules"
+    domain: [decide]
+    used_in: [cap-plan-roadmap]
+
+  experiment-design:
+    description: "Rigorous experiment design document"
+    domain: [decide]
+    used_in: [cap-plan-experiment-design]
+
+  resource-budget:
+    description: "Compute, time, and personnel budget"
+    domain: [decide]
+    used_in: [cap-plan-resource-budget]
+
+  exec-plan:
+    description: "Concrete execution plan with timeline and dependencies"
+    domain: [decide]
+    used_in: [cap-plan-exec-plan]
+
+  ml-experiment:
+    description: "ML experiment plan with architecture, data, training, and eval strategy"
+    domain: [decide]
+    used_in: [cap-plan-ml-experiment]
+
+  # === Build domain ===
+  ux-structure:
+    description: "UX page hierarchy and flow map"
+    domain: [build]
+    used_in: [cap-map-ux-structure]
+
+  ux-flow-visual:
+    description: "UX flow visual verification — renders flowcharts and checks standards"
+    domain: [verify]
+    used_in: [cap-check-ux-flow-visual]
+
+  experiment:
+    description: "Experiment scaffold or ongoing experiment"
+    domain: [build, operate]
+    used_in: [cap-scaffold-experiment, cap-track-experiment]
+
+  data-pipeline:
+    description: "Data loading and preprocessing pipeline"
+    domain: [build]
+    used_in: [cap-build-data-pipeline]
+
+  model-loss:
+    description: "Model architecture and loss function"
+    domain: [build]
+    used_in: [cap-build-model-loss]
+
+  eval-harness:
+    description: "Evaluation script with metrics"
+    domain: [build]
+    used_in: [cap-render-eval-harness]
+
+  paper-outline:
+    description: "Paper section structure with placeholders"
+    domain: [build]
+    used_in: [cap-build-paper-outline]
+
+  paper-draft:
+    description: "Full paper draft with text, figures, tables"
+    domain: [build]
+    used_in: [cap-build-paper-draft]
+
+  visualization-pack:
+    description: "Collection of figures and plots"
+    domain: [build]
+    used_in: [cap-render-visualization-pack]
+
+  results-table:
+    description: "Main/ablation/comparison tables"
+    domain: [build]
+    used_in: [cap-render-results-table]
+
+  implementation:
+    description: "Working code implementation"
+    domain: [build]
+    used_in: [cap-build-implementation]
+
+  tasks:
+    description: "Decomposed task list from roadmap"
+    domain: [build]
+    used_in: [cap-map-tasks]
+
+  interface-contracts:
+    description: "API/interface specifications"
+    domain: [build]
+    used_in: [cap-build-interface-contracts]
+
+  markdown:
+    description: "Markdown-rendered output from document conversion (markitdown)"
+    domain: [build]
+    used_in: [cap-render-markdown]
+
+  dashboard:
+    description: "Interactive web dashboard (HTML/JS/CSS)"
+    domain: [build]
+    used_in: [cap-scaffold-dashboard]
+
+  repo-explorer:
+    description: "Interactive repository exploration app"
+    domain: [build]
+    used_in: [cap-build-repo-explorer]
+
+  flowchart:
+    description: "Flowchart or diagram (D2, Mermaid, SVG)"
+    domain: [build]
+    used_in: [cap-render-flowchart]
+
+  parallel-sweep:
+    description: "Parallel hyperparameter sweep or experiment batch runner"
+    domain: [build]
+    used_in: [cap-build-parallel-sweep]
+
+  audio-summary:
+    description: "Audio summary or podcast-style narration (NotebookLM-style)"
+    domain: [build]
+    used_in: [cap-render-audio-summary]
+
+  enhanced-image:
+    description: "Enhanced or post-processed image (upscale, denoise, adjust)"
+    domain: [build]
+    used_in: [cap-render-enhanced-image]
+
+  architecture-gallery:
+    description: "Visual gallery of code/system architecture diagrams"
+    domain: [build]
+    used_in: [cap-render-architecture-gallery]
+
+  autonomous-agent:
+    description: "Autonomous agent configuration and orchestration setup"
+    domain: [build]
+    used_in: [cap-build-autonomous-agent]
+
+  # === Verify domain ===
+  evidence-bundle:
+    description: "Collection of verification evidence"
+    domain: [verify]
+    used_in: [cap-assemble-evidence-bundle]
+
+  quality-gate:
+    description: "PASS/FAIL quality gate verdict"
+    domain: [verify]
+    used_in: [cap-decide-quality-gate]
+
+  metric-sanity:
+    description: "Metric range and distribution sanity check"
+    domain: [verify]
+    used_in: [cap-check-metric-sanity]
+
+  reproducibility:
+    description: "Reproducibility verification"
+    domain: [verify]
+    used_in: [cap-check-reproducibility]
+
+  paper-structure:
+    description: "Paper structure validation"
+    domain: [verify]
+    used_in: [cap-check-paper-structure]
+
+  citation-integrity:
+    description: "Citation integrity verification"
+    domain: [verify]
+    used_in: [cap-check-citation-integrity]
+
+  figure-table-consistency:
+    description: "Figure-table cross-reference consistency"
+    domain: [verify]
+    used_in: [cap-check-figure-table-consistency]
+
+  visual-regression:
+    description: "Visual regression testing"
+    domain: [verify]
+    used_in: [cap-check-visual-regression]
+
+  evidence-completeness:
+    description: "Evidence completeness verification"
+    domain: [verify]
+    used_in: [cap-check-evidence-completeness]
+
+  source-trust:
+    description: "Source trust and credibility verification"
+    domain: [verify]
+    used_in: [cap-check-source-trust]
+
+  test:
+    description: "Test plan and strategy"
+    domain: [verify]
+    used_in: [cap-plan-test]
+
+  scientific-rigor:
+    description: "Scientific reasoning and critical thinking quality"
+    domain: [verify]
+    used_in: [cap-check-scientific-rigor]
+
+  deliverable:
+    description: "General deliverable quality audit (code, model, report)"
+    domain: [verify]
+    used_in: [cap-check-deliverable]
+
+  training-readiness:
+    description: "NN training readiness (data, model, infra, hyperparams)"
+    domain: [verify]
+    used_in: [cap-check-training-readiness]
+
+  numerical-correctness:
+    description: "Numerical accuracy and scientific computing validation"
+    domain: [verify]
+    used_in: [cap-check-numerical-correctness]
+
+  scholarly-quality:
+    description: "Scholarly writing quality and academic rigor evaluation"
+    domain: [verify]
+    used_in: [cap-check-scholarly-quality]
+
+  # === Deliver domain ===
+  output:
+    description: "Delivery-ready package"
+    domain: [deliver]
+    used_in: [cap-package-output]
+
+  handoff-guide:
+    description: "Operations guide for recipients"
+    domain: [deliver]
+    used_in: [cap-build-handoff-guide]
+
+  release-notes:
+    description: "Changelog and release notes"
+    domain: [deliver]
+    used_in: [cap-build-release-notes]
+
+  release:
+    description: "Software release (version tag, deployment, publication)"
+    domain: [deliver]
+    used_in: [cap-publish-release]
+
+  demo-script:
+    description: "Step-by-step demo with expected outputs"
+    domain: [deliver]
+    used_in: [cap-build-demo-script]
+
+  paper-web:
+    description: "Paper converted to interactive web page"
+    domain: [deliver]
+    used_in: [cap-publish-paper-web]
+
+  interactive-research:
+    description: "Interactive research results web publication"
+    domain: [deliver]
+    used_in: [cap-publish-interactive-research]
+
+  # === Operate domain ===
+  runbook:
+    description: "Operational procedures and escalation"
+    domain: [operate]
+    used_in: [cap-build-runbook]
+
+  observability:
+    description: "Monitoring, logging, and alerting config"
+    domain: [operate]
+    used_in: [cap-build-observability]
+
+  incident:
+    description: "Incident triage and routing"
+    domain: [operate]
+    used_in: [cap-triage-incident]
+
+  cost-performance:
+    description: "Cost and performance analysis"
+    domain: [operate]
+    used_in: [cap-check-cost-performance]
+
+  telemetry:
+    description: "Telemetry collection and metrics pipeline"
+    domain: [operate]
+    used_in: [cap-track-telemetry]
+
+  # === Review domain ===
+  retro:
+    description: "Experiment retrospective"
+    domain: [review]
+    used_in: [cap-extract-retro]
+
+  design-principles:
+    description: "Extracted design principles"
+    domain: [review]
+    used_in: [cap-extract-design-principles]
+
+  gate:
+    description: "Go/no-go decision gate"
+    domain: [review]
+    used_in: [cap-decide-gate]
+
+  postmortem:
+    description: "Incident postmortem analysis"
+    domain: [review]
+    used_in: [cap-extract-postmortem]
+
+  paper-peer:
+    description: "Peer review of a paper"
+    domain: [review]
+    used_in: [cap-review-paper-peer]
+
+  paper-editorial:
+    description: "Editorial review of a paper"
+    domain: [review]
+    used_in: [cap-review-paper-editorial]
+
+  rebuttal:
+    description: "Rebuttal preparation"
+    domain: [review]
+    used_in: [cap-plan-rebuttal]
+
+  metrics-retro:
+    description: "Metric calibration retrospective"
+    domain: [review]
+    used_in: [cap-check-metrics-retro]
+
+  improvement:
+    description: "Adversarial review of artifact improvements — scored gap list with PASS/ITERATE verdict"
+    domain: [review]
+    used_in: [cap-review-improvement]
+
+  process:
+    description: "Process improvement recommendations"
+    domain: [review]
+    used_in: [cap-plan-process]
+
+  # === Knowledge domain ===
+  card:
+    description: "Self-contained knowledge card"
+    domain: [knowledge]
+    used_in: [cap-capture-card]
+
+  hub:
+    description: "Knowledge hub update"
+    domain: [knowledge]
+    used_in: [cap-sync-hub]
+
+  index:
+    description: "Knowledge index entry"
+    domain: [knowledge]
+    used_in: [cap-sync-index]
+
+  template-library:
+    description: "Template library update"
+    domain: [knowledge]
+    used_in: [cap-sync-template-library]
+
+  learning-loop:
+    description: "Learning feedback loop"
+    domain: [knowledge]
+    used_in: [cap-build-learning-loop]
+
+  standards-update:
+    description: "Standards library update"
+    domain: [knowledge]
+    used_in: [cap-sync-standards-update]
+
+  # === Build domain (media/presentation) — added 2026-02-24 ===
+  slides:
+    description: "Slide deck for presentations (Marp, reveal.js, PPTX, LaTeX Beamer)"
+    domain: [build]
+    used_in: [cap-render-slides]
+
+  poster:
+    description: "Scientific poster (LaTeX, HTML, PPTX format)"
+    domain: [build]
+    used_in: [cap-render-poster]
+
+  image:
+    description: "AI-generated or composed image (PNG, SVG)"
+    domain: [build]
+    used_in: [cap-render-image]
+
+  schematic:
+    description: "Scientific diagram or schematic (SVG, PNG, TikZ)"
+    domain: [build]
+    used_in: [cap-render-schematic]
+
+  video:
+    description: "Produced video from slides and voice (MP4)"
+    domain: [build]
+    used_in: [cap-render-video]
+
+# Total: 88 unique objects (69 v3.2 + 19 from _tools/ tiering promotion)
+# Added 2026-02-24 (tiering): citation, venue-template, ml-experiment,
+#   markdown, dashboard, repo-explorer, flowchart, parallel-sweep, audio-summary,
+#   enhanced-image, architecture-gallery, autonomous-agent, scientific-rigor,
+#   deliverable, training-readiness, numerical-correctness, scholarly-quality,
+#   paper-web, interactive-research
+# Validation: every cap-<verb>-<object> must have both verb in verbs.yaml AND object here

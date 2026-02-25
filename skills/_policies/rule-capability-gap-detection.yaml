@@ -1,0 +1,81 @@
+id: rule-capability-gap-detection
+name: "Capability Gap Detection"
+version: 1
+description: >
+  When an agent struggles with a task, diagnose what capability is missing
+  rather than trying harder. Inspired by OpenAI Harness Engineering P2:
+  "Ask 'what capability is missing' instead of 'try harder'."
+
+  This is a meta-rule that changes agent behavior when failures occur.
+  Instead of retrying the same approach, the agent should:
+  1. Diagnose what's missing (tool, guardrail, abstraction, documentation)
+  2. Build the missing capability into the repository
+  3. Then retry the original task with the new capability
+
+  Each capability added is an infrastructure investment that compounds
+  over time, increasing the scope of what agents can accomplish.
+
+triggers:
+  task_keywords: ["error", "fail", "stuck", "blocked", "cannot", "unable"]
+  events: ["consecutive_failure"]
+
+hard_rules:
+  - id: diagnose-before-retry
+    rule: >
+      After 2 consecutive failures on the same task, STOP retrying.
+      Instead, diagnose what is missing:
+        - Missing tool? → Create it in _tools/<family>/
+        - Missing guardrail? → Create rule-* in _policies/
+        - Missing abstraction? → Create cap-* in _stages/
+        - Missing documentation? → Update CLAUDE.md or PLANS.md
+      Then retry the original task.
+    required: true
+
+  - id: depth-first-investment
+    rule: >
+      When building a missing capability, treat it as a reusable
+      infrastructure investment. The capability should:
+        - Follow 3-layer naming conventions
+        - Have proper cap_id, inputs, outputs in frontmatter
+        - Be registered in capability-index.yaml
+        - Be deployable via setup.sh
+    required: true
+
+  - id: document-the-gap
+    rule: >
+      When a capability gap is identified, log it:
+        - What task triggered the gap
+        - What was missing
+        - What was created to fill it
+        - Whether the original task then succeeded
+      This creates a feedback loop for system improvement.
+    required: false
+
+detection_signals:
+  - signal: "Same error repeated 2+ times"
+    action: "Stop, diagnose missing capability"
+  - signal: "Agent asks user for help on mechanical task"
+    action: "Missing tool — build it"
+  - signal: "Output quality inconsistent across runs"
+    action: "Missing guardrail — create rule-*"
+  - signal: "Agent can't find relevant context"
+    action: "Missing documentation — update CLAUDE.md or create PLANS.md"
+  - signal: "Task requires manual steps agent can't automate"
+    action: "Missing abstraction — create cap-* or tool"
+
+response_protocol:
+  step_1: "Log the failure pattern"
+  step_2: "Classify: tool | guardrail | abstraction | documentation"
+  step_3: "Build the missing piece (use skill-creator if cap-*)"
+  step_4: "Deploy via setup.sh"
+  step_5: "Retry original task"
+  step_6: "If success, capture learning in knowledge/"
+
+gate_criteria:
+  - "No brute-force retries (max 2 before diagnosis)"
+  - "Gap diagnosis documented before fix attempt"
+  - "New capability follows naming conventions"
+
+injection_point:
+  event: agent_failure
+  priority: high

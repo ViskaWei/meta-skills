@@ -1,0 +1,232 @@
+id: path-general-entropy-cleanup
+name: "Entropy Cleanup — Periodic Consistency Check + Auto-Fix"
+domain: harness
+version: 1
+outcome: "3-layer skill system → full consistency scan → user-confirmed fixes → clean state → entropy report"
+source: "Harness Engineering P3 (Entropy Management): 靠机械化执行而非文档维护一致性"
+execution_mode: team
+parallel_groups:
+  - id: post-crossref-validators
+    steps: [detect-ghost-refs, check-stale-artifacts]
+    merge_at: compile-entropy-report
+
+description: >
+  定期清理和一致性检查。扫描 3-layer skill system 的 9 项健康指标，
+  生成 entropy report（CRITICAL/WARNING/INFO 分级），用户确认后自动修复。
+  设计为 idempotent — 重复执行不会破坏已 clean 的状态。
+
+triggers:
+  - "improve system cleanup"
+  - "system cleanup"
+  - "entropy cleanup"
+  - "consistency check"
+  - "定期清理"
+  - "一致性检查"
+
+inputs:
+  required: []
+  optional:
+    - scope: "Focus: all | frontmatter | naming | registry | stale (default: all)"
+    - fix: "Auto-fix mode: confirm | auto | dry-run (default: confirm)"
+
+steps:
+  # === Phase 1: Scan (discover + verify) — All deterministic ===
+  - id: run-validators
+    stage: verify
+    capabilities_needed: [cap-decide-quality-gate]
+    output_type: gate-verdict
+    description: >
+      Run all deterministic validators in parallel:
+      (1) bash tools/validate_contracts.sh — YAML frontmatter contracts
+      (2) bash tools/validate_aliases.sh — trigger word + cap reference validation
+      (3) bash tools/build_capability_index.sh — regenerate index, diff against current
+      Collect stdout/stderr, parse PASS/FAIL/WARNING counts.
+
+  - id: cross-ref-registry
+    stage: discover
+    capabilities_needed: [cap-compare-option-matrix]
+    output_type: option-matrix
+    gate_requires: [gate-verdict]
+    description: >
+      Cross-reference 4 authority sources for consistency:
+      (1) skills-registry.yaml (cap_id entries) vs capability-index.yaml (active entries)
+      (2) objects.yaml used_in declarations vs capability-index active entries
+      (3) _policies/*.yaml files vs skills-registry.yaml policies section
+      (4) Block files on disk (_stages/*/sub/*.md) vs capability-index entries
+      Output: count of orphaned, missing, and mismatched entries per source pair.
+
+  - id: detect-ghost-refs
+    stage: verify
+    capabilities_needed: [cap-decide-quality-gate]
+    output_type: gate-verdict
+    gate_requires: [option-matrix]
+    description: >
+      Scan all L1 path YAML files (_paths/*.yaml) for capability references:
+      (1) Extract all cap-<verb>-<object> tokens from capabilities_needed fields
+      (2) Check each against active entries in capability-index.yaml
+      (3) Flag as GHOST if referenced but not active (commented-out or absent)
+      (4) Check for duplicate cap_id assignments in skills-registry.yaml
+      (5) Verify object names against objects.yaml canonical list
+      Output: ghost_refs[], duplicates[], naming_violations[].
+
+  - id: check-stale-artifacts
+    stage: verify
+    capabilities_needed: [cap-decide-quality-gate]
+    output_type: gate-verdict
+    gate_requires: [option-matrix]
+    description: >
+      Check for stale artifacts and hygiene issues:
+      (1) .nfs* files (NFS stale handles) — count and list
+      (2) .bak, *~, .swp temp files — count and list
+      (3) Artifact types in block frontmatter not in artifact-types.yaml
+      (4) Pathological directory nesting (>2 levels in _standards/)
+      (5) Naming violations: non-kebab-case files in _stages/ and _tools/
+      Output: stale_files[], missing_artifact_types[], naming_issues[].
+
+  - id: compile-entropy-report
+    stage: discover
+    capabilities_needed: [cap-compare-option-matrix]
+    output_type: entropy-report
+    gate_requires: [gate-verdict]
+    description: >
+      Compile all scan results into a single entropy report with severity levels:
+        CRITICAL: broken references, duplicate IDs, missing blocks referenced by paths
+        WARNING: unregistered policies, missing frontmatter, naming violations
+        INFO: stale files, aspirational forward-refs, cosmetic issues
+      Include:
+      - System health dashboard (active/total caps, path coverage, policy coverage)
+      - Per-issue: severity, file path, specific problem, proposed fix
+      - Fix plan: ordered by impact × effort, Det vs LLM classification
+      Print report to terminal (not file).
+
+  # === Phase 2: Confirm (decide) ===
+  - id: confirm-fixes
+    stage: decide
+    capabilities_needed: [cap-decide-adr]
+    output_type: adr
+    gate_requires: [entropy-report]
+    description: >
+      PAUSE: Present entropy report to user.
+      User selects fix scope:
+      - "all" → apply all proposed fixes
+      - "critical" → only CRITICAL fixes
+      - "dry-run" → show what would change, don't apply
+      - cherry-pick specific issues by ID
+      Record decision as ADR. Do NOT proceed without confirmation.
+
+  # === Phase 3: Fix (build + verify) ===
+  - id: auto-fix-deterministic
+    stage: build
+    capabilities_needed: [cap-build-implementation]
+    output_type: patched-artifact
+    gate_requires: [adr]
+    description: >
+      Apply deterministic (safe) fixes:
+      (1) Add YAML frontmatter to unannotated L2 blocks — use objects.yaml
+          to derive correct cap-<verb>-<object> for each file
+      (2) Regenerate capability-index.yaml via build_capability_index.sh
+      (3) Register orphan policies in skills-registry.yaml
+      (4) Add missing artifact types to artifact-types.yaml
+      (5) Delete .nfs* / .bak / temp files (git-tracked dirs only)
+      (6) Rename files violating kebab-case convention
+      Each fix is atomic and logged.
+
+  - id: fix-structural-issues
+    stage: build
+    capabilities_needed: [cap-build-implementation]
+    output_type: patched-artifact
+    gate_requires: [patched-artifact]
+    description: >
+      Apply structural fixes requiring LLM judgment:
+      (1) Resolve duplicate cap_ids — rename one, pick better name, update all refs
+      (2) Create missing cap blocks referenced by paths (e.g., cap-publish-release)
+          — add object to objects.yaml if needed, create block .md with frontmatter
+      (3) Fix ghost cap references in paths — update to correct cap_id or create block
+      (4) Flatten pathological directory nesting (_standards/)
+      Each fix logged with before/after.
+
+  - id: verify-clean
+    stage: verify
+    capabilities_needed: [cap-decide-quality-gate]
+    output_type: gate-verdict
+    gate_requires: [patched-artifact]
+    description: >
+      Re-run all validators to confirm clean state:
+      (1) bash tools/validate_contracts.sh → 0 errors
+      (2) bash tools/validate_aliases.sh → 0 errors
+      (3) bash tools/build_capability_index.sh → no commented-out entries for fixed blocks
+      (4) bash tools/setup.sh → all OK
+      (5) Re-run ghost ref detection → 0 ghosts for fixed items
+      Compare before/after counts. PASS = all targeted issues resolved.
+
+  # === Phase 4: Critic + Capture ===
+  - id: critic-review
+    stage: review
+    capabilities_needed: [cap-review-improvement]
+    output_type: improvement-review
+    gate_requires: [gate-verdict, patched-artifact]
+    description: >
+      Review cleanup completeness across 6 dimensions:
+      (1) Frontmatter coverage: % of blocks with valid contracts
+      (2) Index health: active / total ratio in capability-index
+      (3) Path integrity: % of paths with all caps resolvable
+      (4) Naming compliance: 0 violations in verbs/objects/kebab-case
+      (5) Registry sync: policies, caps, paths all cross-referenced
+      (6) Hygiene: 0 stale files, no pathological nesting
+      Score each 0-10. PASS if all >= 7 and no CRITICAL remaining.
+
+  - id: capture-result
+    stage: knowledge
+    capabilities_needed: [cap-capture-card]
+    output_type: entropy-report
+    gate_requires: [improvement-review]
+    description: >
+      Record entropy cleanup results:
+      - Date, scope, duration
+      - Before/after health dashboard
+      - Issues found vs fixed vs deferred
+      - Recurring patterns (what keeps generating entropy)
+      - Recommendations for prevention (new rules, hooks, CI checks)
+      Print to terminal as entropy report summary.
+
+branches:
+  - from: critic-review
+    condition: "ITERATE AND iterations < max_iterations AND critical_remaining >= 1"
+    goto: auto-fix-deterministic
+    note: "Critical issues remain — fix more"
+  - from: critic-review
+    condition: "PASS (all dimensions >= 7 AND no CRITICAL remaining)"
+    goto: capture-result
+    note: "System is clean"
+  - from: critic-review
+    condition: "ITERATE AND iterations >= max_iterations"
+    goto: capture-result
+    note: "Budget exhausted — capture progress and remaining issues"
+  - from: verify-clean
+    condition: "FAIL — validators still report errors"
+    goto: fix-structural-issues
+    note: "Fix did not resolve all issues — retry structural fixes"
+
+applicable_policies:
+  required:
+    - rule-quality-deliverable-minimum
+    - rule-entropy-cleanup-gate
+    - rule-completion-guard
+  recommended:
+    - rule-improve-verify-result
+
+quality_standards:
+  validators_pass: "validate_contracts.sh + validate_aliases.sh → 0 errors"
+  index_healthy: "No commented-out entries for blocks that have frontmatter"
+  paths_resolvable: "All capabilities_needed in path YAMLs exist in active index"
+  naming_clean: "0 violations in verbs.yaml, objects.yaml, kebab-case"
+  no_stale_files: "0 .nfs* / .bak / temp files in git-tracked directories"
+
+stop_rules:
+  max_iterations: 3
+  clean_state: "all 6 critic dimensions >= 7 AND no CRITICAL remaining"
+  time_budget: "Configurable via --time flag (default 1h)"
+completion_guard:
+  enabled: true
+  required_evidence: [gate-verdict, entropy-report]
+  completion_promise: "ALL_STEPS_COMPLETE"

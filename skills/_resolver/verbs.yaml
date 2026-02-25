@@ -1,0 +1,132 @@
+# Verb Governance — 18 canonical verbs for cap-* IDs
+#
+# Rules:
+#   1. cap-* IDs MUST use a canonical verb (no aliases in IDs)
+#   2. Aliases are for L0 input parsing only (user-facing synonyms)
+#   3. Stage names (discover/verify/etc.) are NOT verbs
+#   4. When adding a new verb, document its boundary vs neighbors
+
+canonical_verbs:
+  # --- Ingest / Extract family ---
+  intake:
+    definition: "Collect and register input sources into a manifest"
+    boundary: "Creates intake-manifest; does NOT analyze content"
+    aliases: [ingest, collect, gather, import]
+    stages: [discover]
+
+  extract:
+    definition: "Pull structured information from unstructured sources"
+    boundary: "Reads existing content; does NOT create new artifacts"
+    aliases: [parse, pull, mine, distill]
+    stages: [discover, review]
+
+  # --- Analysis / Structure family ---
+  map:
+    definition: "Analyze, decompose, or visualize structural relationships"
+    boundary: "Produces a structural view or task breakdown; does NOT create runnable code"
+    aliases: [diagram, visualize, analyze, decompose, break-down, split]
+    stages: [discover, build]
+
+  compare:
+    definition: "Evaluate multiple options against criteria"
+    boundary: "Produces ranked comparison; does NOT make the decision"
+    aliases: [evaluate, benchmark, contrast]
+    stages: [decide]
+
+  # --- Decision / Planning family ---
+  decide:
+    definition: "Record a binding decision with rationale"
+    boundary: "Produces ADR or gate verdict; requires prior compare/evidence"
+    aliases: [choose, select, approve, gate]
+    stages: [decide, verify, review]
+
+  plan:
+    definition: "Design a forward-looking roadmap, experiment, or improvement"
+    boundary: "Produces actionable plan or improvement actions; does NOT execute"
+    aliases: [design, schedule, roadmap, strategize, improve, refine, optimize]
+    stages: [decide, verify, review]
+
+  # --- Build / Create family ---
+  scaffold:
+    definition: "Generate a runnable project skeleton from a plan"
+    boundary: "Produces boilerplate code/config; body needs implementation"
+    aliases: [init, bootstrap, template]
+    stages: [build]
+
+  build:
+    definition: "Implement functional artifacts (code, pipeline, document, spec)"
+    boundary: "Produces working artifact or formal specification"
+    aliases: [implement, create, construct, develop, define, specify, formalize]
+    stages: [build, deliver, operate, knowledge]
+
+  render:
+    definition: "Generate visual or formatted output from data"
+    boundary: "Transforms data into presentation form; does NOT analyze"
+    aliases: [generate, format, produce, typeset]
+    stages: [build]
+
+  # --- Assembly / Delivery family ---
+  assemble:
+    definition: "Bundle multiple artifacts into a coherent collection"
+    boundary: "Internal bundling; NOT ready for external delivery (use package)"
+    aliases: [bundle, compile, aggregate]
+    stages: [verify]
+    disambiguation: "assemble = internal bundling; package = delivery-ready; publish = external release"
+
+  package:
+    definition: "Prepare artifacts for delivery with metadata and checksums"
+    boundary: "Delivery-ready; includes release notes, handoff info"
+    aliases: [wrap, ship, release-prep]
+    stages: [deliver]
+    disambiguation: "package = delivery-ready; assemble = internal bundling"
+
+  publish:
+    definition: "Push artifacts to external registries, repos, or platforms"
+    boundary: "External release; requires prior package step"
+    aliases: [deploy, release, push, distribute]
+    stages: [deliver]
+    disambiguation: "publish = external release; package = delivery-ready bundle"
+
+  # --- Verification family ---
+  check:
+    definition: "Run a specific verification or validation test"
+    boundary: "Produces pass/fail evidence; does NOT render verdict (use decide)"
+    aliases: [verify, validate, test, audit, inspect, lint]
+    stages: [verify, operate, review]
+    disambiguation: "check = run test; decide = render verdict"
+
+  # --- Operations family ---
+  track:
+    definition: "Record ongoing metrics and status over time"
+    boundary: "Continuous logging; does NOT analyze (use extract/check)"
+    aliases: [log, monitor, record, observe]
+    stages: [operate]
+
+  triage:
+    definition: "Assess severity and route incidents to resolution"
+    boundary: "Classification + routing; does NOT fix the issue"
+    aliases: [classify, prioritize, diagnose]
+    stages: [operate]
+
+  # --- Review family ---
+  review:
+    definition: "Provide structured critique of an artifact"
+    boundary: "Expert feedback; does NOT modify the artifact"
+    aliases: [critique, assess, feedback]
+    stages: [review]
+
+  # --- Knowledge family ---
+  capture:
+    definition: "Create a reusable knowledge card from project learnings"
+    boundary: "Single card; for bulk operations use sync"
+    aliases: [document, note, record-learning]
+    stages: [knowledge]
+
+  sync:
+    definition: "Update an index, hub, or library to reflect new knowledge"
+    boundary: "Propagation/synchronization; requires prior capture"
+    aliases: [update, refresh, propagate, index]
+    stages: [knowledge]
+
+# Total: 18 canonical verbs
+# Merged into aliases: decompose→map, define→build, improve→plan

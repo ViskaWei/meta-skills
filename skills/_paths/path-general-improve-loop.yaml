@@ -1,0 +1,127 @@
+id: path-general-improve-loop
+name: "Research-Informed Improve Loop"
+domain: general
+version: 3
+outcome: "Current artifact → Best-practice research → User-confirmed direction → Improvements → Critic loop → Enhanced artifact"
+source: "Default /improve path — research-driven iterative refinement with critic gate"
+execution_mode: team
+parallel_groups: []
+
+inputs:
+  required:
+    - target: "File, directory, or artifact to improve"
+  optional:
+    - goal: "Improvement focus area (auto-detected if omitted)"
+
+steps:
+  # === Phase 1: Research (discover) ===
+  - id: read-current
+    stage: discover
+    capabilities_needed: [cap-intake-brief]
+    output_type: intake-manifest
+    description: "Deep-read target artifact: structure, conventions, patterns, strengths, weaknesses"
+
+  - id: research-best-practices
+    stage: discover
+    capabilities_needed: [cap-extract-standards-scout]
+    output_type: standards-pack
+    gate_requires: [intake-manifest]
+    description: "Search industry best practices for the target type (3-5 authoritative sources)"
+
+  - id: gap-analysis
+    stage: discover
+    capabilities_needed: [cap-compare-option-matrix]
+    output_type: option-matrix
+    gate_requires: [intake-manifest, standards-pack]
+    description: "Compare current state vs best practices. Score gaps on impact × effort."
+
+  # === Phase 2: Confirm (decide) ===
+  - id: confirm-direction
+    stage: decide
+    capabilities_needed: [cap-decide-adr]
+    output_type: adr
+    gate_requires: [option-matrix]
+    description: >
+      PAUSE: Present gap analysis + proposed improvement directions to user.
+      User confirms which gaps to address and priority order.
+      Record decision as ADR. Do NOT proceed without user confirmation.
+
+  - id: plan-improvements
+    stage: decide
+    capabilities_needed: [cap-plan-roadmap]
+    output_type: roadmap-mvp
+    gate_requires: [adr]
+    description: "Produce ordered improvement plan based on user-confirmed direction"
+
+  # === Phase 3: Execute (build + verify) ===
+  - id: apply-improvements
+    stage: build
+    capabilities_needed: [cap-build-implementation]
+    output_type: patched-artifact
+    gate_requires: [roadmap-mvp]
+    description: "Apply improvements per plan. Preserve existing behavior — no breaking changes."
+
+  - id: verify-changes
+    stage: verify
+    capabilities_needed: [cap-decide-quality-gate]
+    output_type: gate-verdict
+    gate_requires: [patched-artifact]
+    description: "Run checks, confirm no regressions. If FAIL → fix before proceeding."
+
+  # === Phase 4: Critic loop (review) ===
+  - id: critic-review
+    stage: review
+    capabilities_needed: [cap-review-improvement]
+    output_type: improvement-review
+    gate_requires: [gate-verdict, patched-artifact]
+    description: "Adversarial critic: score 6 dimensions, list gaps, verdict PASS/ITERATE"
+
+  # === Phase 5: Capture (knowledge) ===
+  - id: capture-result
+    stage: knowledge
+    capabilities_needed: [cap-capture-card]
+    output_type: improvement-log
+    gate_requires: [improvement-review]
+    description: "Record improvement log: changes, evidence, before/after, remaining gaps"
+
+branches:
+  - from: critic-review
+    condition: "ITERATE AND iterations < max_iterations AND actionable_gaps >= 2"
+    goto: plan-improvements
+    note: "Critic found gaps — loop back"
+  - from: critic-review
+    condition: "PASS (avg >= 4.0 AND high_priority_gaps == 0 AND actionable_gaps < 2)"
+    goto: capture-result
+    note: "Critic satisfied — finalize"
+  - from: critic-review
+    condition: "ITERATE AND iterations >= max_iterations"
+    goto: capture-result
+    note: "Budget exhausted — capture what was achieved + remaining gaps"
+  - from: verify-changes
+    condition: "FAIL with regressions"
+    goto: apply-improvements
+    note: "Regression detected — must fix before proceeding to critic"
+
+applicable_policies:
+  required:
+    - rule-quality-deliverable-minimum
+    - rule-improve-verify-result
+    - rule-completion-guard
+  recommended:
+    - rule-standards-source-trust
+
+quality_standards:
+  user_confirmed: "ADR exists before any changes applied"
+  research_grounded: "standards-pack with 3+ sources exists"
+  critic_pass: "avg >= 4.0 AND high_priority_gaps == 0"
+  no_regressions: "verify step PASS on every round"
+
+stop_rules:
+  max_iterations: 3
+  critic_pass: "avg >= 4.0 AND high_priority_gaps == 0 AND actionable_gaps < 2"
+  time_budget: "Configurable via --time flag (default 1h)"
+
+completion_guard:
+  enabled: true
+  required_evidence: [gate-verdict, improvement-log]
+  completion_promise: "ALL_STEPS_COMPLETE"

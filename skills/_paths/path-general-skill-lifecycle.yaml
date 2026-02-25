@@ -1,0 +1,171 @@
+id: path-general-skill-lifecycle
+name: "Skill Lifecycle Management"
+domain: harness
+version: 1
+outcome: "Skill inventory → Maturity classification → PAUSE → Apply lifecycle actions → Updated registry → Verified"
+source: "Manage skill lifecycle: version bumps, deprecation, promotion, archival. Keeps the skill system lean by retiring unused capabilities and promoting proven ones."
+execution_mode: team
+parallel_groups: []
+
+inputs:
+  required: []
+  optional:
+    - action: "Lifecycle action: audit (default), deprecate, promote, archive, version"
+    - target: "Specific skill/path/cap to act on (default: scan all)"
+    - since: "Date threshold for staleness check (default: 90 days)"
+
+steps:
+  # === Phase 1: Inventory (discover) ===
+  - id: inventory-skills
+    stage: discover
+    capabilities_needed: [cap-intake-brief]
+    output_type: intake-manifest
+    description: >
+      Full skill system inventory with lifecycle metadata:
+      (1) Parse skills-registry.yaml for all entries with leveling tags
+      (2) Extract maturity (Mk) and proficiency (Pz) from leveling
+      (3) Check git log for last-modified date of each capability file
+      (4) Check path references: which paths use each L2 cap
+      (5) Identify: unused caps (0 path references), stale caps (no git activity in >since days)
+      (6) Produce lifecycle inventory table:
+      | ID | Layer | Leveling | Last Modified | Path Refs | Status |
+
+  # === Phase 2: Classify (discover) ===
+  - id: classify-maturity
+    stage: discover
+    capabilities_needed: [cap-compare-option-matrix]
+    output_type: option-matrix
+    gate_requires: [intake-manifest]
+    description: >
+      Classify each skill into lifecycle stage:
+      - PROMOTE candidates: P2+M3 or higher, used by ≥2 paths, stable (V0-V1)
+        → Bump leveling, add to more paths, document as core
+      - STABLE: P1+M2 or higher, actively used
+        → No action needed
+      - REVIEW candidates: M1 or lower, used by ≤1 path
+        → Needs quality audit, may need improvement
+      - DEPRECATE candidates: M0, unused by any path, stale >since days
+        → Mark deprecated, plan removal
+      - ARCHIVE candidates: Already deprecated, no references anywhere
+        → Move to archive, remove from registry
+      If --action is specified, filter to only that lifecycle action.
+
+  # === Phase 3: Confirm (decide) ===
+  - id: confirm-actions
+    stage: decide
+    capabilities_needed: [cap-decide-adr]
+    output_type: adr
+    gate_requires: [option-matrix]
+    description: >
+      PAUSE: Present lifecycle classification to user.
+      For each action category, show:
+      - Skills affected and proposed action
+      - Impact assessment (what depends on these skills)
+      - Recommended priority order
+      User confirms which lifecycle actions to execute.
+      Record as ADR. Do NOT proceed without confirmation.
+
+  # === Phase 4: Apply lifecycle actions (build) ===
+  - id: apply-actions
+    stage: build
+    capabilities_needed: [cap-build-implementation]
+    output_type: patched-artifact
+    gate_requires: [adr]
+    description: >
+      Execute confirmed lifecycle actions:
+      PROMOTE:
+        (1) Update leveling tag in skills-registry.yaml (bump P and/or M)
+        (2) Update leveling in capability-index.yaml
+        (3) Update leveling in block frontmatter
+        (4) Add to recommended paths if under-referenced
+      DEPRECATE:
+        (1) Add deprecated: true + deprecated_date to registry entry
+        (2) Add deprecation notice to block file header
+        (3) Comment out in capability-index.yaml with note
+        (4) Remove from path steps (replace with successor if exists)
+      ARCHIVE:
+        (1) Move block file to _stages/<stage>/archived/
+        (2) Remove from skills-registry.yaml
+        (3) Remove from capability-index.yaml
+        (4) Update CATALOG.md if L1 path
+      VERSION:
+        (1) Bump version field in path YAML
+        (2) Update changelog in path YAML comments
+        (3) Update leveling if maturity changed
+
+  - id: update-registry
+    stage: build
+    capabilities_needed: [cap-build-implementation]
+    output_type: patched-artifact
+    gate_requires: [patched-artifact]
+    description: >
+      Ensure all registries are consistent after lifecycle actions:
+      (1) Rebuild capability-index.yaml (tools/build_capability_index.sh)
+      (2) Update _paths/CATALOG.md with any path changes
+      (3) Update affected L0 SKILL.md routing tables
+      (4) Update affected L1 path YAMLs (remove deprecated cap references)
+
+  # === Phase 5: Verify (verify) ===
+  - id: verify-lifecycle
+    stage: verify
+    capabilities_needed: [cap-decide-quality-gate]
+    output_type: gate-verdict
+    gate_requires: [patched-artifact]
+    description: >
+      Full verification after lifecycle changes:
+      (1) tools/setup.sh — deployment succeeds
+      (2) tools/validate_contracts.sh — contracts valid
+      (3) No broken references (paths don't reference archived/deprecated caps)
+      (4) No orphan files (archived caps removed from active directories)
+      (5) Registry counts match filesystem
+
+  # === Phase 6: Capture (knowledge) ===
+  - id: capture-result
+    stage: knowledge
+    capabilities_needed: [cap-capture-card]
+    output_type: improvement-log
+    gate_requires: [gate-verdict]
+    description: >
+      Record lifecycle management report:
+      (1) Actions taken: promoted N, deprecated M, archived K, versioned J
+      (2) System health delta (before/after counts)
+      (3) Deprecated skills and their successors
+      (4) Recommended follow-up actions
+      (5) Next scheduled lifecycle review date
+
+branches:
+  - from: verify-lifecycle
+    condition: "ALL changes verified AND no broken references"
+    goto: capture-result
+    note: "Lifecycle actions applied cleanly"
+  - from: verify-lifecycle
+    condition: "Broken references found AND iterations < max_iterations"
+    goto: apply-actions
+    note: "Fix broken references and retry"
+  - from: verify-lifecycle
+    condition: "iterations >= max_iterations"
+    goto: capture-result
+    note: "Budget exhausted — capture progress"
+
+applicable_policies:
+  required:
+    - rule-quality-deliverable-minimum
+    - rule-improve-verify-result
+    - rule-completion-guard
+  recommended:
+    - rule-skill-build-gate
+
+quality_standards:
+  no_broken_references: "No paths reference deprecated/archived capabilities"
+  registry_consistent: "skills-registry.yaml matches filesystem state"
+  deployment_clean: "setup.sh + validate_contracts.sh PASS"
+  lifecycle_documented: "All actions recorded in improvement-log"
+
+stop_rules:
+  max_iterations: 2
+  lifecycle_complete: "All confirmed actions applied and verified"
+  time_budget: "Configurable via --time flag (default 1h)"
+completion_guard:
+  enabled: true
+  required_evidence: [gate-verdict, improvement-log]
+  completion_promise: "ALL_STEPS_COMPLETE"

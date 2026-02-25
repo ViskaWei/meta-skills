@@ -1,0 +1,86 @@
+id: rule-layer-dependency
+name: "Layer Dependency Validation"
+version: 1
+description: >
+  Enforces strict dependency direction in the 3-layer skill architecture.
+  Inspired by OpenAI Harness Engineering: "strict layered architecture with
+  validated dependency directions and limited permissible edges."
+
+  Layer hierarchy (dependencies flow DOWN only):
+    L0 (Entry) → L1 (Paths) → L2 (Capabilities)
+    Cross-cutting (Policies) can be injected at any layer.
+
+  Violations indicate architectural drift that degrades agent reliability.
+
+triggers:
+  task_keywords: ["skill", "capability", "path", "policy", "create", "build"]
+  output_types: [skill-file, capability-block, path-template, policy-rule]
+
+hard_rules:
+  - id: l0-no-direct-l2
+    rule: >
+      L0 entry points (workflow/SKILL.md) MUST NOT directly invoke L2 capabilities.
+      They route through L1 path templates or the resolver. Exception: single-stage
+      routing for simple commands.
+    required: true
+
+  - id: l2-no-upward-dependency
+    rule: >
+      L2 capabilities (_stages/*/sub/*.md, _tools/*/*.md) MUST NOT reference
+      or depend on L0 entry points or L1 path templates. They are atomic
+      building blocks with no knowledge of the routing layer above them.
+    required: true
+
+  - id: l1-references-l2-only
+    rule: >
+      L1 path templates (_paths/*.yaml) MUST only reference L2 capabilities
+      by cap_id. They MUST NOT contain implementation logic — only orchestration.
+    required: true
+
+  - id: policy-is-cross-cutting
+    rule: >
+      Policies (_policies/rule-*.yaml) inject at gate points and can reference
+      any layer. They MUST NOT contain implementation logic — only constraints
+      and evidence requirements.
+    required: true
+
+  - id: resolver-is-neutral
+    rule: >
+      The resolver (_resolver/) maps inputs to capabilities without business logic.
+      It MUST NOT contain hardcoded paths or skip the capability index.
+    required: true
+
+dependency_matrix:
+  #            Can depend on →  L0    L1    L2    Policy  Resolver
+  L0_entry:                   [self,  yes,  via-resolver, read, read]
+  L1_paths:                   [no,    self, yes,  read,   read]
+  L2_capabilities:            [no,    no,   self, read,   no]
+  policies:                   [read,  read, read, self,   read]
+  resolver:                   [no,    no,   read, read,   self]
+
+validation_checks:
+  - name: "No upward imports"
+    pattern: "L2 files must not contain references to workflow/ or _paths/"
+    command: "grep -r 'workflow/' skills/_stages/ skills/_tools/ || true"
+    expected: "No matches"
+
+  - name: "Paths reference caps only"
+    pattern: "Path YAML steps must use cap_id references"
+    command: "grep -c 'cap-' skills/_paths/*.yaml"
+    expected: "At least 1 cap reference per path file"
+
+  - name: "No implementation in policies"
+    pattern: "Policy files must not contain code blocks with implementation"
+    command: "grep -c '```python\\|```javascript\\|```typescript' skills/_policies/*.yaml || echo 0"
+    expected: "0"
+
+gate_criteria:
+  - "No L2 capability references L0 or L1"
+  - "All path templates reference capabilities by cap_id"
+  - "No policy contains implementation code"
+  - "Resolver does not hardcode paths"
+
+injection_point:
+  after_step: build
+  before_step: quality-gate
+  verify_capabilities: [cap-check-dependency-direction]
