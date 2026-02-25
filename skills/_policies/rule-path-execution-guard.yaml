@@ -1,0 +1,40 @@
+id: rule-path-execution-guard
+name: "Path Execution Guard — 路径执行强制"
+version: 1
+scope: cross-cutting
+description: >
+  强制保证 L0 技能调用后，agent 必须走完 path pipeline 的关键检查点。
+  由 PostToolUse hook (skill_start_hook.sh) 和 Stop hook (stop_guard.sh)
+  机械强制执行。
+
+triggers:
+  output_types: ["*"]
+
+checkpoints:
+  - id: PAUSE_CONFIRMED
+    description: "方案已经用户确认（PAUSE 步骤通过）"
+    when: "after routing, before execution"
+  - id: VERIFY_PASS
+    description: "验证步骤已执行且结果非 FAIL"
+    when: "after execution, before delivery"
+    enforcement: mechanical  # stop_guard.sh checks this
+  - id: ARTIFACT_DELIVERED
+    description: "最终制品已交付且可用"
+    when: "after verification"
+
+state_file:
+  path: ".claude/skill-execution.state"
+  format: json
+  auto_created_by: "tools/hooks/skill_start_hook.sh"
+  checked_by: "tools/hooks/stop_guard.sh"
+  stale_timeout: 7200  # seconds (2h)
+
+enforcement:
+  level: mechanical
+  mechanism: stop-hook + postToolUse-hook
+  fail_open: true  # parse error → allow (don't block user)
+
+agent_instructions: >
+  当你到达每个检查点时，你必须用 Write 工具更新 .claude/skill-execution.state，
+  将检查点 ID 追加到 checkpoints_reached 数组。stop_guard.sh 会在你尝试退出时
+  机械检查 VERIFY_PASS 是否在 checkpoints_reached 中。如果不在，你将被阻止退出。
