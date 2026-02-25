@@ -1,0 +1,52 @@
+id: path-research-new-experiment
+name: "Research New Experiment Kickoff"
+domain: research
+version: 1
+outcome: "Research question → Problem tree → Hypotheses → Metrics → Roadmap → Experiment scaffold"
+source: "NEW — structured kickoff with gates (wraps _tools/research/new-experiment.md)"
+execution_mode: direct
+parallel_groups: []
+steps:
+  - id: intake
+    stage: discover
+    capabilities_needed: [cap-intake-brief]
+    output_type: intake-manifest
+    description: "Capture research question, constraints, and prior context"
+  - id: problem-tree
+    stage: discover
+    capabilities_needed: [cap-map-problem-tree]
+    output_type: problem-tree
+    gate_requires: [intake-manifest]
+    description: "Decompose research question into sub-problems"
+  - id: hypotheses
+    stage: discover
+    capabilities_needed: [cap-map-hypothesis-tree]
+    output_type: hypothesis-tree
+    gate_requires: [problem-tree]
+    description: "Generate falsifiable hypotheses (>=2 required)"
+  - id: metrics
+    stage: discover
+    capabilities_needed: [cap-extract-metrics-contract]
+    output_type: metrics-contract
+    gate_requires: [hypothesis-tree]
+    description: "Define evaluation metrics and acceptance criteria"
+  - id: roadmap
+    stage: decide
+    capabilities_needed: [cap-plan-roadmap]
+    output_type: roadmap-mvp
+    gate_requires: [hypothesis-tree, metrics-contract]
+    description: "MVP list with stop-loss rules and phase gates"
+  - id: scaffold
+    stage: build
+    capabilities_needed: [cap-scaffold-experiment]
+    output_type: experiment-scaffold
+    gate_requires: [roadmap-mvp]
+    description: "Create hub + roadmap + exp skeleton documents (no code)"
+branches: []
+applicable_policies:
+  required: [rule-quality-deliverable-minimum, rule-research-front-loading]
+  recommended: [rule-completion-guard]
+completion_guard:
+  enabled: true
+  required_evidence: [hypothesis-tree, roadmap-mvp, experiment-scaffold]
+  completion_promise: "ALL_STEPS_COMPLETE"

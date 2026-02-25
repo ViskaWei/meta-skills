@@ -1,0 +1,65 @@
+id: path-general-ratchet-loop
+name: "Quality Ratchet Loop"
+domain: general
+version: 1
+outcome: "Iterative check → fix → re-check until PASS or blocker"
+source: "NEW — generalizes iterative improvement pattern for /fix command"
+execution_mode: direct
+parallel_groups: []
+steps:
+  - id: spec-derive
+    stage: discover
+    capabilities_needed: [cap-extract-requirements]
+    output_type: requirements-list
+    description: "Derive acceptance criteria from context (skip if spec provided)"
+    optional: true
+  - id: check-current
+    stage: verify
+    capabilities_needed: [cap-decide-quality-gate]
+    output_type: gate-verdict
+    description: "Run all applicable checks against current state"
+  - id: plan-improvements
+    stage: decide
+    capabilities_needed: [cap-plan-roadmap]
+    output_type: roadmap-mvp
+    gate_requires: [gate-verdict]
+    description: "Analyze failures, plan targeted fixes"
+  - id: apply-fixes
+    stage: build
+    capabilities_needed: [cap-build-implementation]
+    output_type: patched-artifact
+    gate_requires: [roadmap-mvp]
+    description: "Apply planned fixes to the artifact"
+  - id: re-check
+    stage: verify
+    capabilities_needed: [cap-decide-quality-gate]
+    output_type: gate-verdict
+    gate_requires: [patched-artifact]
+    description: "Re-run checks after fixes applied"
+  - id: capture-result
+    stage: knowledge
+    capabilities_needed: [cap-capture-card]
+    output_type: improvement-log
+    gate_requires: [gate-verdict]
+    description: "Record improvement log and lessons learned"
+branches:
+  - from: re-check
+    condition: "FAIL AND iterations < max_iterations AND consecutive_same_failures < 2"
+    goto: plan-improvements
+  - from: re-check
+    condition: "PASS"
+    goto: capture-result
+  - from: re-check
+    condition: "FAIL AND (iterations >= max_iterations OR consecutive_same_failures >= 2)"
+    goto: capture-result
+    note: "Produce blocker report instead of improvement log"
+stop_rules:
+  max_iterations: 5
+  consecutive_same_failures: 2
+applicable_policies:
+  required: [rule-quality-deliverable-minimum, rule-completion-guard]
+  recommended: []
+completion_guard:
+  enabled: true
+  required_evidence: [gate-verdict, improvement-log]
+  completion_promise: "ALL_STEPS_COMPLETE"

@@ -1,20 +1,20 @@
 ---
 name: meta
-description: "技能系统自身的运维与进化 — 健康检查、质量审计、外部融合、熵清理、能力缺口、生命周期管理、回流合并。作用对象是技能架构本身，不是用户制品。Triggers: 'meta', '元', 'harness', 'skill health', 'skill scout', 'skill quality'."
+description: "技能系统自维护 — 健康检查、熵清理、质量审计、能力缺口诊断。作用对象是技能架构本身，不是用户制品。Triggers: 'meta', '元', 'harness', 'skill health', 'skill quality'."
 ---
 
 # meta
 
-**技能系统的运维中心。** 所有 "作用于技能架构本身" 的操作统一从这里进入。
+**技能系统的自维护中心。** 所有 "作用于技能架构本身" 的操作从这里进入。
 
 与其他 L0 的区别：
 - `/improve` → 改善**用户制品**（代码、论文、配置）
 - `/build -o skill` → **创建**新的 L1/L2/rule
-- `/meta` → **维护/进化**已有技能体系（健康、质量、融合、清理、缺口、生命周期、回流）
+- `/meta` → **维护**已有技能体系（健康、清理、质量、缺口）
 
 ## 触发词
 
-`meta`, `元`, `harness`, `skill health`, `skill scout`, `skill quality`, `skill lifecycle`, `skill cleanup`, `skill annotate`, `skill gaps`, `探索技能`, `技能健康`
+`meta`, `元`, `harness`, `skill health`, `skill quality`, `skill cleanup`, `skill gaps`
 
 ## 语法
 
@@ -28,7 +28,7 @@ description: "技能系统自身的运维与进化 — 健康检查、质量审�
 |---|---|---|---|
 | `--goal "..."` | `-g` | 具体目标 | Auto-detect |
 | `--target <path>` | `-t` | 作用对象 | 全系统 |
-| `--depth fast|standard|deep` | `-d` | 检查深度 | standard |
+| `--depth fast\|standard\|deep` | `-d` | 检查深度 | standard |
 | `--dry-run` | | 只分析不修改 | off |
 
 ## 子命令路由表
@@ -36,14 +36,9 @@ description: "技能系统自身的运维与进化 — 健康检查、质量审�
 | Sub-command | Path | 做什么 |
 |---|---|---|
 | `health` | `path-general-skill-health` | 6 维健康仪表盘：命名·合约·注册·部署·覆盖·重复 |
-| `scout` | `path-general-skill-scout-integrate` | 发现+评估+融合外部 skill 到 3 层架构 |
-| `quality <skill>` | `path-general-skill-quality` | 按 skill-creator-standard 审计+修复 |
 | `cleanup` | `path-general-entropy-cleanup` | 9 项一致性检查 + 自动修复（熵管理） |
-| `lifecycle` | `path-general-skill-lifecycle` | 版本升级 / 废弃 / 晋升 / 归档 |
+| `quality <skill>` | `path-general-skill-quality` | 按 skill-creator-standard 审计+修复 |
 | `gaps` | `path-general-capability-gap` | 能力缺口诊断：失败信号 → 缺口分类 → 自动补建 |
-| `annotate` | `path-general-skill-annotate` | 批量标注缺失 frontmatter 的 L2 block |
-| `promote` | `path-general-skill-promote` | 扫描 repo 技能 → 评估 → 合规检查 → 分类放置 → 确认 → 合并 |
-| `rule` | `path-standards-session-to-rule` | 从当前 session 提取 rule/policy |
 
 ## 共同特征（所有 path）
 
@@ -57,14 +52,9 @@ description: "技能系统自身的运维与进化 — 健康检查、质量审�
 ```yaml
 candidate_paths:
   - path-general-skill-health            # /meta health
-  - path-general-skill-scout-integrate   # /meta scout
   - path-general-skill-quality           # /meta quality
   - path-general-entropy-cleanup         # /meta cleanup
-  - path-general-skill-lifecycle         # /meta lifecycle
   - path-general-capability-gap          # /meta gaps
-  - path-general-skill-annotate          # /meta annotate
-  - path-general-skill-promote           # /meta promote
-  - path-standards-session-to-rule       # /meta rule
 default_output: meta-report
 default_rules:
   - rule-completion-guard
@@ -73,7 +63,7 @@ default_rules:
   - rule-skill-health-gate               # auto-injected when health
   - rule-entropy-cleanup-gate            # auto-injected when cleanup
   - rule-capability-gap-detection        # auto-injected when gaps
-  - rule-skill-build-gate                # auto-injected when quality/annotate
+  - rule-skill-build-gate                # auto-injected when quality
 ```
 
 ---
@@ -110,25 +100,21 @@ default_rules:
 
 ---
 
-### `scout` — 发现 + 融合外部 Skill
+### `cleanup` — 熵清理
 
-`path-general-skill-scout-integrate` — 从外部生态搜索 → 5维评估 → 适配 3 层 → 部署。
+`path-general-entropy-cleanup` — 9 项一致性检查 + 自动修复。
 
 ```
-[Define]    define-need (capability gaps)
-[Scout]     4 sources: Anthropic official → awesome lists → skills.sh → GitHub
-[Evaluate]  5-dim scoring → S/A/B/C rank → confirm (PAUSE)
-[Adapt]     determine placement → content adaptation → handle duplicates
-[Deploy]    register → setup.sh → verify
-[Capture]   scout report
+[Scan]     run-validators → cross-ref-registry → detect-ghosts → check-stale → entropy-report
+[Confirm]  → confirm-fixes (PAUSE)
+[Fix]      → auto-fix-det → fix-structural → verify-clean
+[Critic]   → critic ──[ITERATE]──→ auto-fix-det
+                     ──[PASS]────→ capture
 ```
 
-**输入模式**:
-- `/meta scout` — 全面探索，先扫描当前系统缺口
-- `/meta scout "browser automation"` — 按主题搜索
-- `/meta scout --input <url>` — 直接导入指定 skill/repo
+**9 项检查**: frontmatter 完整性 · capability-index 漂移 · ghost cap 引用 · duplicate cap_id · 命名规范 · orphan policy · artifact-types 完整性 · stale 文件 · validator 误报
 
-**6 步 · 3 分支 · Policies**: rule-quality-deliverable-minimum, rule-capability-gap-detection
+**11 步 · 4 分支 · Policies**: rule-entropy-cleanup-gate
 
 ---
 
@@ -161,24 +147,6 @@ default_rules:
 
 ---
 
-### `cleanup` — 熵清理
-
-`path-general-entropy-cleanup` — 9 项一致性检查 + 自动修复。
-
-```
-[Scan]     run-validators → cross-ref-registry → detect-ghosts → check-stale → entropy-report
-[Confirm]  → confirm-fixes (PAUSE)
-[Fix]      → auto-fix-det → fix-structural → verify-clean
-[Critic]   → critic ──[ITERATE]──→ auto-fix-det
-                     ──[PASS]────→ capture
-```
-
-**9 项检查**: frontmatter 完整性 · capability-index 漂移 · ghost cap 引用 · duplicate cap_id · 命名规范 · orphan policy · artifact-types 完整性 · stale 文件 · validator 误报
-
-**11 步 · 4 分支 · Policies**: rule-entropy-cleanup-gate
-
----
-
 ### `gaps` — 能力缺口诊断
 
 `path-general-capability-gap` — 补能力而非"再试试"。
@@ -197,80 +165,13 @@ default_rules:
 
 ---
 
-### `lifecycle` — 生命周期管理
-
-`path-general-skill-lifecycle` — 版本升级 / 废弃 / 晋升 / 归档。
-
-```
-[Inventory] inventory-skills → classify-maturity
-[Confirm]   → confirm-actions (PAUSE)
-[Apply]     → apply-actions → update-registry → verify-lifecycle
-[Capture]   → capture-result
-```
-
-**5 分类**: PROMOTE · STABLE · REVIEW · DEPRECATE · ARCHIVE
-
-**7 步 · 3 分支 · Policies**: rule-improve-verify-result
-
----
-
-### `annotate` — 批量标注
-
-`path-general-skill-annotate` — 扫描缺失 frontmatter → 自动分类 → 批量标注。
-
-```
-[Scan]     scan-unannotated → classify-blocks
-[Preview]  → preview-annotations (PAUSE)
-[Apply]    → apply-frontmatter → rebuild-index → verify-annotations
-[Capture]  → capture-result
-```
-
-**7 步 · 4 分支 · Policies**: rule-skill-build-gate
-
----
-
-### `promote` — 回流合并
-
-`path-general-skill-promote` — 扫描 repo 技能 → 评估 → 合规检查 → 分类放置 → 确认 → 合并。
-
-```
-[Scan]      扫描 repo/.claude/skills/ 下所有 .md 文件
-[Evaluate]  对比 meta 框架已有 caps → 找出新增/改进的
-[Conform]   检查 naming + frontmatter 合规 → 自动修复不合规的
-[Classify]  判断放哪一层: L2 cap → _stages/<stage>/sub/ 或 _tools/<family>/
-                         L1 path → _paths/
-                         Policy → _policies/
-[Confirm]   PAUSE — 用户确认哪些要 promote
-[Merge]     复制到 meta-skills/ + 更新 registry + index
-[Verify]    validate_contracts.sh + setup.sh
-[Capture]   promotion log
-```
-
-**8 步 · 3 分支 · Policies**: rule-skill-build-gate, rule-improve-verify-result
-
----
-
-### `rule` — Session → Rule
-
-`path-standards-session-to-rule` — 从当前对话提取 rule/policy。
-
-1. **提取** session 对话历史 → 结构化 brief
-2. **导出** 可测试的 acceptance criteria
-3. **冲突检查** 对照所有现有 `rule-*.yaml`
-4. **草拟** 新 `rule-<scope>-<intent>.yaml` → `_policies/`
-5. **部署** `tools/setup.sh` + 验证
-6. **沉淀** knowledge card
-
----
-
 ## 与其他 L0 的分工
 
 | 操作 | 入口 | 理由 |
 |---|---|---|
 | 改善用户代码/配置/文档 | `/improve system` | 作用对象是用户制品 |
-| 改善论文 | `/improve paper` | 作用对象是用户制品 |
 | 创建新 L1/L2/rule | `/build -o skill` | 创建新的，不是维护已有的 |
-| 沉淀知识卡片 | `/capture` | 作用对象是知识，不是技能系统 |
+| 完整科研循环 | `/research` | 科研专用 pipeline |
 | 维护/进化技能体系 | **`/meta`** | 作用对象是技能架构本身 |
 
 ## Examples
@@ -278,21 +179,11 @@ default_rules:
 ```
 /meta health                                    # 6维健康仪表盘
 /meta health --scope stage:verify               # 只检查 verify 阶段
-/meta scout                                     # 全面探索外部 skill 生态
-/meta scout "browser automation"                # 按主题搜索
-/meta scout --input https://github.com/user/skill-repo  # 直接导入
 /meta quality skills/improve/SKILL.md           # 审计单个 skill
 /meta cleanup                                   # 全面扫描 + 修复
 /meta cleanup --depth fast                      # 快速检查，只报告不修复
 /meta gaps                                      # 诊断能力缺口
 /meta gaps --scope tools                        # 只检查工具缺口
-/meta annotate                                  # 批量标注缺失 frontmatter
-/meta annotate --dry-run                        # 预览标注，不实际写入
-/meta lifecycle                                 # 全系统生命周期审计
-/meta lifecycle --action deprecate --since 90   # 废弃90天无活动的技能
-/meta promote                                   # 从 repo 回流技能到 meta-skills
-/meta rule                                      # 从当前 session 提取 rule
-/meta rule "web deployment must verify external URL"
 ```
 
 ## COMPLETION CONTRACT — 不完成不停止

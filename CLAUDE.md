@@ -21,17 +21,20 @@ This repo implements an **8-stage lifecycle skill system** with a 3-layer invoca
 ### The 3 Layers
 
 ```
-L0  Entry Command (1)        -> /meta with 9+ subcommands
-L1  Path Templates (9)       -> Multi-step recipes (_paths/*.yaml)
-L2  Atomic Capabilities (21) -> Building blocks (_stages/<stage>/sub/*.md)
-Cross-cutting: Policies (8)  -> Quality gates (_policies/rule-*.yaml)
+L0  Entry Commands (4)       -> /meta, /build, /research, /improve
+L1  Path Templates (8)       -> Multi-step recipes (_paths/*.yaml)
+L2  Atomic Capabilities (29) -> Building blocks (_stages/<stage>/sub/*.md)
+Cross-cutting: Policies (9)  -> Quality gates (_policies/rule-*.yaml)
 ```
 
 ### Directory Layout
 
 ```
 skills/
-  meta/                    <- L0: Entry command (auto-discovered by Claude Code)
+  meta/                    <- L0: System maintenance (auto-discovered)
+  build/                   <- L0: Create new skills (auto-discovered)
+  research/                <- L0: Research pipeline (auto-discovered)
+  improve/                 <- L0: Improve artifacts (auto-discovered)
   _stages/                 <- L2: 8 lifecycle stages (HIDDEN from auto-discovery)
     discover/ decide/ build/ verify/ deliver/ operate/ review/ knowledge/
   _paths/                  <- L1: Path template YAML files
@@ -42,14 +45,14 @@ skills/
 skills-registry.yaml       <- Master registry
 ```
 
-**Key rule**: Directories starting with `_` are HIDDEN from Claude Code auto-discovery. Only `meta/` is auto-discovered as a skill entry point.
+**Key rule**: Directories starting with `_` are HIDDEN from Claude Code auto-discovery. 4 L0 commands (meta, build, research, improve) are auto-discovered.
 
 ---
 
 ## Routing Flow
 
 ```
-User input -> /meta <subcommand> -> Select path-* template (L1)
+User input -> L0 command match -> Select path-* template (L1)
   -> Resolver expands steps -> capability-index.yaml lookup (L2)
   -> Policy engine injects rule-* checks -> Execute -> Produce run-* record
 ```
@@ -107,7 +110,7 @@ Follow this decision tree:
 After creating any skill, you MUST:
 1. Update `skills-registry.yaml` (cap_id, input/output_types, policies, leveling)
 2. Update `_resolver/capability-index.yaml` (or run `tools/build_capability_index.sh`)
-3. Update `meta/SKILL.md` routing table (if adding new subcommands)
+3. Update L0 SKILL.md routing table (if adding new subcommands)
 4. Run `bash tools/setup.sh` to deploy
 
 ---
@@ -132,7 +135,10 @@ Every capability gets a `Gx-Vy-Pz-Mk` tag:
 | `skills/_resolver/objects.yaml` | Canonical objects + domains |
 | `skills/_resolver/artifact-types.yaml` | Artifact type definitions |
 | `skills/_resolver/resolver.md` | Resolution algorithm |
-| `skills/meta/SKILL.md` | L0 entry point + routing table |
+| `skills/meta/SKILL.md` | L0 system command + routing table |
+| `skills/build/SKILL.md` | L0 build command |
+| `skills/research/SKILL.md` | L0 research command |
+| `skills/improve/SKILL.md` | L0 improve command |
 | `tools/setup.sh` | Deploy to ~/.claude/skills/ |
 | `tools/build_capability_index.sh` | Regenerate capability index |
 | `tools/validate_contracts.sh` | Validate YAML frontmatter contracts |
@@ -159,7 +165,7 @@ bash tools/setup.sh    # Deploys to ~/.claude/skills/
 ```
 
 This copies:
-- `meta/` skill -> top-level (auto-discovered)
+- 4 L0 commands (meta, build, research, improve) -> top-level (auto-discovered)
 - 8 lifecycle stages -> `_stages/` (hidden)
 - `_paths/`, `_policies/`, `_resolver/`, `_standards/` -> hidden directories
 - Symlinks `_tools/` and `skills-registry.yaml`

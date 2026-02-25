@@ -70,6 +70,42 @@ stages:
         input_types: [brief, context-map]
         output_types: [requirements-list]
         leveling: G3-V0-P2-M3
+      - id: problem-tree
+        cap_id: cap-map-problem-tree
+        title: "Problem Tree"
+        file: "sub/problem-tree.md"
+        triggers: ["problem tree", "问题树"]
+        output: "Structured problem decomposition"
+        input_types: [brief]
+        output_types: [problem-tree]
+        leveling: G3-V1-P2-M3
+      - id: hypothesis-tree
+        cap_id: cap-map-hypothesis-tree
+        title: "Hypothesis Tree"
+        file: "sub/hypothesis-tree.md"
+        triggers: ["hypothesis", "假设树"]
+        output: "Falsifiable hypothesis tree"
+        input_types: [goal-statement]
+        output_types: [hypothesis-tree]
+        leveling: G2-V1-P1-M1
+      - id: metrics-contract
+        cap_id: cap-extract-metrics-contract
+        title: "Metrics Contract"
+        file: "sub/metrics-contract.md"
+        triggers: ["metrics", "评估口径"]
+        output: "Evaluation metrics + thresholds"
+        input_types: [hypothesis-tree]
+        output_types: [metrics-contract]
+        leveling: G3-V1-P2-M3
+      - id: standards-scout
+        cap_id: cap-extract-standards-scout
+        title: "Standards Scout"
+        file: "sub/standards-scout.md"
+        triggers: ["standards", "best practices"]
+        output: "Standards pack with comparison"
+        input_types: [goal-statement, domain-description]
+        output_types: [standards-pack]
+        leveling: G3-V1-P1-M2
 
   - id: decide
     title: "Decide"
@@ -105,6 +141,24 @@ stages:
         input_types: [roadmap-mvp, milestone-plan]
         output_types: [exec-plan]
         leveling: G3-V1-P1-M1
+      - id: roadmap-mvp
+        cap_id: cap-plan-roadmap
+        title: "Roadmap MVP"
+        file: "sub/roadmap-mvp.md"
+        triggers: ["roadmap", "mvp"]
+        output: "MVP experiment list with stop-loss rules"
+        input_types: [hypothesis-tree, metrics-contract]
+        output_types: [roadmap-mvp]
+        leveling: G3-V1-P2-M3
+      - id: experiment-design
+        cap_id: cap-plan-experiment-design
+        title: "Experiment Design"
+        file: "sub/experiment-design.md"
+        triggers: ["experiment design", "实验设计"]
+        output: "Rigorous experiment design"
+        input_types: [roadmap-mvp]
+        output_types: [experiment-design]
+        leveling: G3-V1-P2-M3
 
   - id: build
     title: "Build"
@@ -237,6 +291,24 @@ stages:
         input_types: [experiment-retro, design-principles]
         output_types: [decision-gate]
         leveling: G3-V1-P2-M3
+      - id: exp-retro
+        cap_id: cap-extract-retro
+        title: "Experiment Retro"
+        file: "sub/exp-retro.md"
+        triggers: ["retro", "复盘"]
+        output: "Experiment retrospective"
+        input_types: [gate-verdict]
+        output_types: [experiment-retro]
+        leveling: G3-V1-P2-M3
+      - id: design-principles-extract
+        cap_id: cap-extract-design-principles
+        title: "Design Principles Extract"
+        file: "sub/design-principles-extract.md"
+        triggers: ["design principles", "设计原则"]
+        output: "Reusable design principles"
+        input_types: [experiment-results, evidence-bundle]
+        output_types: [design-principles]
+        leveling: G2-V1-P1-M1
 
   - id: knowledge
     title: "Knowledge"
@@ -314,14 +386,15 @@ policies:
     file: "_policies/rule-layer-dependency.yaml"
     triggers: ["*"]
     scope: governance
+  - id: rule-research-front-loading
+    file: "_policies/rule-research-front-loading.yaml"
+    triggers: [experiment-report, hub-update, experiment-retro, knowledge-card]
+    scope: research
 
 # === Path Templates ===
 paths:
   - id: path-general-skill-health
     file: "_paths/path-general-skill-health.yaml"
-    domain: general
-  - id: path-general-skill-scout-integrate
-    file: "_paths/path-general-skill-scout-integrate.yaml"
     domain: general
   - id: path-general-skill-quality
     file: "_paths/path-general-skill-quality.yaml"
@@ -329,41 +402,56 @@ paths:
   - id: path-general-entropy-cleanup
     file: "_paths/path-general-entropy-cleanup.yaml"
     domain: general
-  - id: path-general-skill-lifecycle
-    file: "_paths/path-general-skill-lifecycle.yaml"
-    domain: general
   - id: path-general-capability-gap
     file: "_paths/path-general-capability-gap.yaml"
     domain: general
-  - id: path-general-skill-annotate
-    file: "_paths/path-general-skill-annotate.yaml"
-    domain: general
-  - id: path-general-skill-promote
-    file: "_paths/path-general-skill-promote.yaml"
-    domain: general
-  - id: path-standards-session-to-rule
-    file: "_paths/path-standards-session-to-rule.yaml"
-    domain: standards
   - id: path-general-improve-loop
     file: "_paths/path-general-improve-loop.yaml"
     domain: general
+  - id: path-research-new-experiment
+    file: "_paths/path-research-new-experiment.yaml"
+    domain: research
+  - id: path-research-hypothesis-to-evidence
+    file: "_paths/path-research-hypothesis-to-evidence.yaml"
+    domain: research
+  - id: path-general-ratchet-loop
+    file: "_paths/path-general-ratchet-loop.yaml"
+    domain: general
+
+# === L0 Commands ===
+# User-facing task commands (operate on user artifacts, not the skill system)
+l0_commands:
+  - id: build
+    triggers: [build, 做, create, scaffold, skill]
+    skill_path: "skills/build/SKILL.md"
+    candidate_paths: []
+    default_rules: [rule-quality-deliverable-minimum, rule-skill-build-gate]
+  - id: research
+    triggers: [research, 科研, experiment, hypothesis, rq]
+    skill_path: "skills/research/SKILL.md"
+    candidate_paths:
+      - path-research-new-experiment
+      - path-research-hypothesis-to-evidence
+    default_rules: [rule-quality-deliverable-minimum, rule-research-front-loading, rule-completion-guard]
+  - id: improve
+    triggers: [improve, 完善, polish, enhance, refine]
+    skill_path: "skills/improve/SKILL.md"
+    candidate_paths:
+      - path-general-improve-loop
+      - path-general-ratchet-loop
+    default_rules: [rule-quality-deliverable-minimum, rule-improve-verify-result, rule-completion-guard]
 
 # === System Commands ===
 # Commands that operate on the skill system itself, not user artifacts.
 # Internal routing via SKILL.md table — NOT the smart-router.
 system_commands:
   - id: meta
-    triggers: [meta, harness, skill health, skill scout, skill quality, skill lifecycle, skill cleanup]
+    triggers: [meta, harness, skill health, skill quality, skill cleanup, skill gaps]
     internal_routing: true
     internal_paths:
       - path-general-skill-health
-      - path-general-skill-scout-integrate
       - path-general-skill-quality
       - path-general-entropy-cleanup
-      - path-general-skill-lifecycle
       - path-general-capability-gap
-      - path-general-skill-annotate
-      - path-general-skill-promote
-      - path-standards-session-to-rule
     default_rules: [rule-completion-guard, rule-quality-deliverable-minimum, rule-improve-verify-result]
     skill_path: "skills/meta/SKILL.md"

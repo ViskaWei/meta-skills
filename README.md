@@ -24,50 +24,44 @@ User Input --> L0 Command --> L1 Path Template --> L2 Capabilities
 
 ### Layer 0: Entry Commands
 
-The single L0 entry point is `/meta` with subcommands:
+4 L0 entry commands, each with specialized routing:
 
-| Sub-command | What it does |
-|---|---|
-| `health` | 6-dimension health dashboard (naming, contracts, registry, deploy, coverage, dedup) |
-| `scout` | Discover + evaluate + integrate external skills into the 3-layer architecture |
-| `quality` | Quality audit against skill-creator-standard |
-| `cleanup` | Entropy cleanup (9-point consistency check + auto-fix) |
-| `gaps` | Capability gap diagnosis (tool, guardrail, abstraction, documentation gaps) |
-| `lifecycle` | Version upgrade / deprecate / promote / archive |
-| `annotate` | Batch-annotate missing frontmatter on L2 blocks |
-| `rule` | Extract rules/policies from session patterns |
-| `all` | Full sweep: context + harden + gaps + cleanup |
+| Command | Purpose | Sub-commands |
+|---|---|---|
+| `/meta` | System self-maintenance | `health`, `cleanup`, `quality`, `gaps` |
+| `/build` | Create new skills | `-o skill` (L1 path / L2 cap / rule) |
+| `/research` | Research pipeline | `new`, `full`, `card` |
+| `/improve` | Improve artifacts | `loop` (default), `ratchet` |
 
 ### Layer 1: Path Templates
 
-9 multi-step recipes that orchestrate L2 capabilities:
+8 multi-step recipes that orchestrate L2 capabilities:
 
-| Path | Sub-command | Steps | Description |
+| Path | L0 Command | Steps | Description |
 |---|---|---|---|
-| `path-general-skill-health` | `health` | 12 | Full-system inventory + 6-dimension scoring + auto-fix |
-| `path-general-skill-scout-integrate` | `scout` | 6 | External skill discovery + 5-dim evaluation + adaptation |
-| `path-general-skill-quality` | `quality` | 11 | Standards audit + critic loop + deployment verification |
-| `path-general-entropy-cleanup` | `cleanup` | 11 | 9-point consistency check + structural fixes |
-| `path-general-capability-gap` | `gaps` | 9 | Failure signal collection + gap classification + auto-build |
-| `path-general-skill-lifecycle` | `lifecycle` | 7 | Maturity classification + batch lifecycle actions |
-| `path-general-skill-annotate` | `annotate` | 7 | Scan unannotated blocks + classify + batch apply |
-| `path-standards-session-to-rule` | `rule` | 6 | Extract session patterns into rule-*.yaml policies |
-| `path-general-improve-loop` | (internal) | -- | Shared improve-verify-critic loop |
+| `path-general-skill-health` | `/meta health` | 12 | Full-system inventory + 6-dimension scoring |
+| `path-general-skill-quality` | `/meta quality` | 11 | Standards audit + critic loop |
+| `path-general-entropy-cleanup` | `/meta cleanup` | 11 | 9-point consistency check + auto-fix |
+| `path-general-capability-gap` | `/meta gaps` | 9 | Gap diagnosis + auto-build |
+| `path-general-improve-loop` | `/improve` | 9 | Research-driven improve loop |
+| `path-general-ratchet-loop` | `/improve --mode ratchet` | 5 | Check-fix-recheck loop |
+| `path-research-new-experiment` | `/research new` | 6 | Structured research kickoff |
+| `path-research-hypothesis-to-evidence` | `/research full` | 24 | Full hypothesis-to-evidence cycle |
 
 ### Layer 2: Atomic Capabilities
 
-21 core building blocks organized by lifecycle stage:
+29 core building blocks organized by lifecycle stage:
 
 | Stage | Capabilities | Count |
 |---|---|---|
-| **Discover** | `brief`, `intake`, `standards-scout` | 3 |
-| **Decide** | `adr`, `option-matrix`, `roadmap-mvp` | 3 |
-| **Build** | `implementation`, `scaffold`, `results-table` | 3 |
-| **Verify** | `quality-gate`, `evidence-bundle`, `deliverable-check` | 3 |
-| **Deliver** | `package`, `handoff-guide` | 2 |
-| **Operate** | `telemetry`, `experiment-tracker` | 2 |
-| **Review** | `improvement-critic`, `exp-retro` | 2 |
-| **Knowledge** | `capture`, `index`, `hub-sync` | 3 |
+| **Discover** | `brief`, `intake`, `requirements`, `problem-tree`, `hypothesis-tree`, `metrics-contract`, `standards-scout` | 7 |
+| **Decide** | `option-matrix`, `adr`, `exec-plan`, `roadmap-mvp`, `experiment-design` | 5 |
+| **Build** | `task-decomposition`, `scaffold`, `implementation` | 3 |
+| **Verify** | `test-plan`, `evidence-bundle`, `quality-gate` | 3 |
+| **Deliver** | `package`, `release-notes` | 2 |
+| **Operate** | `runbook`, `observability` | 2 |
+| **Review** | `improvement-critic`, `decision-gate`, `exp-retro`, `design-principles-extract` | 4 |
+| **Knowledge** | `capture`, `hub-sync`, `index` | 3 |
 
 Each capability has a standardized interface defined in YAML frontmatter:
 - `cap_id`: Unique identifier (`cap-<verb>-<object>`)
@@ -78,7 +72,7 @@ Each capability has a standardized interface defined in YAML frontmatter:
 
 ### Cross-cutting: Policies
 
-8 quality gate policies that auto-inject at verification points:
+9 quality gate policies that auto-inject at verification points:
 
 | Policy | When it fires |
 |---|---|
@@ -90,6 +84,7 @@ Each capability has a standardized interface defined in YAML frontmatter:
 | `rule-entropy-cleanup-gate` | Cleanup -- 9-point consistency pass criteria |
 | `rule-capability-gap-detection` | Gap analysis -- gap classification standards |
 | `rule-layer-dependency` | All -- enforces layer separation (L0/L1/L2) |
+| `rule-research-front-loading` | Research -- front-loading checks for experiments |
 
 ### 8-Stage Lifecycle
 
@@ -113,10 +108,11 @@ cd meta-skills
 bash tools/setup.sh
 
 # 3. Use in any project
-/meta health          # Check framework health
-/meta gaps            # Find capability gaps
-/meta scout           # Discover external skills
-/meta quality <skill> # Audit a specific skill
+/meta health              # Check framework health
+/meta gaps                # Find capability gaps
+/build -o skill cap ...   # Create new capabilities
+/research new "topic"     # Start a research project
+/improve src/             # Improve existing code
 ```
 
 ## Growing Your Skill Tree
@@ -157,24 +153,53 @@ Every capability gets a `Gx-Vy-Pz-Mk` maturity tag:
 | **P** (Proficiency) | P0-P3 | P0=draft, P3=hardened |
 | **M** (Maturity) | M0-M4 | M0=stub, M4=observed in production |
 
+## Extension Points
+
+The framework is designed as a **seed** -- it provides core capabilities and paths, with clear extension points for domain-specific needs.
+
+### Adding Domain Capabilities
+
+Some paths reference capabilities that are not included in this repo (marked as extension points). These are domain-specific and should be created by the user:
+
+| Extension Cap | Stage | When You Need It |
+|---|---|---|
+| `cap-build-data-pipeline` | Build | ML data loading + splitting |
+| `cap-build-model-loss` | Build | Model architecture + loss |
+| `cap-render-eval-harness` | Build | Evaluation scripts |
+| `cap-track-experiment` | Operate | Experiment auto-recording |
+| `cap-check-metric-sanity` | Verify | Metric robustness checks |
+| `cap-check-reproducibility` | Verify | Reproducibility verification |
+| `cap-plan-resource-budget` | Decide | Compute/time budgeting |
+
+To create an extension capability:
+```bash
+/build -o skill cap build data-pipeline    # Creates the L2 block
+```
+
+### Adding L0 Commands
+
+To add more L0 entry commands (e.g., `/write`, `/check`, `/fix`), create a `skills/<command>/SKILL.md` with routing table and register in `skills-registry.yaml`.
+
 ## File Structure
 
 ```
 meta-skills/
   skills/
-    meta/                    # L0: Entry command (auto-discovered by Claude Code)
-      SKILL.md               # Skill definition with routing table
+    meta/                    # L0: System maintenance (auto-discovered)
+    build/                   # L0: Create new skills (auto-discovered)
+    research/                # L0: Research pipeline (auto-discovered)
+    improve/                 # L0: Improve artifacts (auto-discovered)
     _stages/                 # L2: 8 lifecycle stages (hidden)
-      discover/sub/          #   3 capabilities
-      decide/sub/            #   3 capabilities
+      discover/sub/          #   7 capabilities
+      decide/sub/            #   5 capabilities
       build/sub/             #   3 capabilities
       verify/sub/            #   3 capabilities
       deliver/sub/           #   2 capabilities
       operate/sub/           #   2 capabilities
-      review/sub/            #   2 capabilities
+      review/sub/            #   4 capabilities
       knowledge/sub/         #   3 capabilities
-    _paths/                  # L1: 9 path templates (hidden)
-    _policies/               # Cross-cutting: 8 quality policies (hidden)
+    _paths/                  # L1: 8 path templates (hidden)
+    _policies/               # Cross-cutting: 9 quality policies (hidden)
     _resolver/               # Resolver + governance files
       capability-index.yaml  #   cap-* to block file mapping
       verbs.yaml             #   18 canonical verbs + aliases
@@ -193,7 +218,7 @@ meta-skills/
   LICENSE
 ```
 
-**Key rule**: Directories starting with `_` are hidden from Claude Code auto-discovery. Only the `meta/` directory (containing `SKILL.md`) is auto-discovered as a skill.
+**Key rule**: Directories starting with `_` are hidden from Claude Code auto-discovery. 4 L0 commands (meta, build, research, improve) are auto-discovered as skills.
 
 ## Validation
 
@@ -226,7 +251,7 @@ This pattern lets you maintain the meta-skills core separately while building do
 ### Routing Flow
 
 ```
-User input --> /meta <subcommand>
+User input --> L0 command match
   --> Match to path-* template (L1)
   --> Resolver expands steps --> capability-index.yaml lookup (L2)
   --> Policy engine injects rule-* checks at gate points

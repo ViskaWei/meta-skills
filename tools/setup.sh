@@ -16,11 +16,18 @@ echo ""
 
 mkdir -p "$SKILLS_DIR"
 
-# --- Step 1: Deploy meta L0 command ---
-echo "Step 1: Deploying meta command..."
-rm -rf "$SKILLS_DIR/meta" 2>/dev/null || true
-cp -rL "$REPO_DIR/skills/meta" "$SKILLS_DIR/meta"
-echo "  OK: meta"
+# --- Step 1: Deploy L0 commands ---
+echo "Step 1: Deploying L0 commands..."
+L0_COMMANDS=(meta build research improve)
+for cmd in "${L0_COMMANDS[@]}"; do
+  if [ -d "$REPO_DIR/skills/$cmd" ]; then
+    rm -rf "$SKILLS_DIR/$cmd" 2>/dev/null || true
+    cp -rL "$REPO_DIR/skills/$cmd" "$SKILLS_DIR/$cmd"
+    echo "  OK: $cmd"
+  else
+    echo "  SKIP: $cmd (not found)"
+  fi
+done
 
 # --- Step 2: Deploy lifecycle stages ---
 echo ""
@@ -62,13 +69,16 @@ echo ""
 echo "=== Verification ==="
 FAIL=0
 
-# Check meta SKILL.md
-if [ -f "$SKILLS_DIR/meta/SKILL.md" ]; then
-  echo "  OK: meta/SKILL.md"
-else
-  echo "  FAIL: meta/SKILL.md missing!"
-  FAIL=1
-fi
+# Check L0 commands
+L0_COMMANDS=(meta build research improve)
+for cmd in "${L0_COMMANDS[@]}"; do
+  if [ -f "$SKILLS_DIR/$cmd/SKILL.md" ]; then
+    echo "  OK: $cmd/SKILL.md"
+  else
+    echo "  FAIL: $cmd/SKILL.md missing!"
+    FAIL=1
+  fi
+done
 
 # Check stages
 for stage in "${STAGES[@]}"; do
@@ -102,6 +112,7 @@ fi
 echo ""
 if [ "$FAIL" -eq 0 ]; then
   echo "=== Setup complete! ==="
+  echo "4 L0 commands available: /meta, /build, /research, /improve"
   echo "Use '/meta health' to check framework health."
 else
   echo "=== Setup completed with warnings ==="

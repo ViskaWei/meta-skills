@@ -1,0 +1,27 @@
+id: rule-research-front-loading
+name: "Research Front-Loading"
+version: 1
+description: >
+  前 30 行必须包含核心结论。科研文档的读者不应翻到第 3 页才知道实验做了什么。
+  适用于实验报告、hub 更新等科研产出。
+triggers:
+  output_types: [experiment-report, hub-update, experiment-retro, knowledge-card]
+evidence_requirements:
+  - type: conclusion-placement
+    description: "核心结论出现在文档前 30 行内"
+    required: true
+  - type: run-tldr
+    description: "Run TL;DR 表（实验 ID、方法、结果、判定）"
+    required: true
+  - type: io-schema
+    description: "I/O Schema（输入输出的类型和维度）"
+    required: false
+gate_criteria:
+  - "核心结论在前 30 行可见（X := 公式段或等价表述）"
+  - "Run TL;DR 表存在且包含：实验 ID、方法摘要、关键指标、判定"
+  - "方法部分有 I/O Schema（输入类型/维度 → 输出类型/维度）"
+  - "不允许纯叙事开头 — 结论优先于背景"
+injection_point:
+  before_step: quality-gate
+  verify_capabilities:
+    - cap-decide-quality-gate

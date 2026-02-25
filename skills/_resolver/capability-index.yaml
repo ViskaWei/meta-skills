@@ -17,6 +17,18 @@ capabilities:
   cap-extract-requirements:
     - { block: "_stages/discover/sub/requirements.md", leveling: "G3-V0-P2-M3", stage: discover, cap_contract: true }
 
+  cap-map-problem-tree:
+    - { block: "_stages/discover/sub/problem-tree.md", leveling: "G3-V1-P2-M3", stage: discover, cap_contract: true }
+
+  cap-map-hypothesis-tree:
+    - { block: "_stages/discover/sub/hypothesis-tree.md", leveling: "G2-V1-P1-M1", stage: discover, cap_contract: true }
+
+  cap-extract-metrics-contract:
+    - { block: "_stages/discover/sub/metrics-contract.md", leveling: "G3-V1-P2-M3", stage: discover, cap_contract: true }
+
+  cap-extract-standards-scout:
+    - { block: "_stages/discover/sub/standards-scout.md", leveling: "G3-V1-P1-M2", stage: discover, cap_contract: true }
+
   # === DECIDE ===
 
   cap-decide-adr:
@@ -27,6 +39,12 @@ capabilities:
 
   cap-plan-exec-plan:
     - { block: "_stages/decide/sub/exec-plan.md", leveling: "G3-V1-P1-M1", stage: decide, cap_contract: true }
+
+  cap-plan-roadmap:
+    - { block: "_stages/decide/sub/roadmap-mvp.md", leveling: "G3-V1-P2-M3", stage: decide, cap_contract: true }
+
+  cap-plan-experiment-design:
+    - { block: "_stages/decide/sub/experiment-design.md", leveling: "G3-V1-P2-M3", stage: decide, cap_contract: true }
 
   # === BUILD ===
 
@@ -73,6 +91,12 @@ capabilities:
 
   cap-decide-gate:
     - { block: "_stages/review/sub/decision-gate.md", leveling: "G3-V0-P1-M1", stage: review, cap_contract: true }
+
+  cap-extract-retro:
+    - { block: "_stages/review/sub/exp-retro.md", leveling: "G3-V1-P2-M3", stage: review, cap_contract: true }
+
+  cap-extract-design-principles:
+    - { block: "_stages/review/sub/design-principles-extract.md", leveling: "G2-V1-P1-M1", stage: review, cap_contract: true }
 
   # === KNOWLEDGE ===
 

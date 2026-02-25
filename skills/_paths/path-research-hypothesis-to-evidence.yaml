@@ -1,0 +1,176 @@
+id: path-research-hypothesis-to-evidence
+name: "Research Hypothesis to Evidence"
+domain: research
+version: 1
+outcome: "Hypothesis tree → MVP experiment → Evidence bundle → Knowledge card"
+source: "Migrated from workflow/sub/research-loop.md"
+execution_mode: team
+parallel_groups:
+  - id: decide-parallel
+    steps: [experiment-design, resource-budget]
+    merge_at: adr
+  - id: verify-parallel
+    steps: [metric-sanity, reproducibility]
+    merge_at: quality-gate
+steps:
+  - id: intake
+    stage: discover
+    capabilities_needed: [cap-intake-brief]
+    output_type: intake-manifest
+    description: "Capture research question and constraints"
+  - id: problem-tree
+    stage: discover
+    capabilities_needed: [cap-map-problem-tree]
+    output_type: problem-tree
+    gate_requires: [intake-manifest]
+    description: "Decompose research question into sub-problems"
+  - id: hypotheses
+    stage: discover
+    capabilities_needed: [cap-map-hypothesis-tree]
+    output_type: hypothesis-tree
+    gate_requires: [problem-tree]
+    description: "Generate falsifiable hypotheses (>=2 required)"
+  - id: metrics
+    stage: discover
+    capabilities_needed: [cap-extract-metrics-contract]
+    output_type: metrics-contract
+    gate_requires: [hypothesis-tree]
+    description: "Define evaluation metrics and acceptance criteria"
+  - id: roadmap
+    stage: decide
+    capabilities_needed: [cap-plan-roadmap]
+    output_type: roadmap-mvp
+    gate_requires: [hypothesis-tree, metrics-contract]
+    description: "MVP list with stop-loss rules"
+  - id: experiment-design
+    stage: decide
+    capabilities_needed: [cap-plan-experiment-design]
+    output_type: experiment-design
+    gate_requires: [roadmap-mvp]
+    description: "Variables, controls, statistical plan"
+  - id: resource-budget
+    stage: decide
+    capabilities_needed: [cap-plan-resource-budget]
+    output_type: resource-budget
+    gate_requires: [roadmap-mvp]
+    description: "Compute, time, and data budget"
+  - id: adr
+    stage: decide
+    capabilities_needed: [cap-decide-adr]
+    output_type: adr
+    gate_requires: [experiment-design, resource-budget]
+    description: "Record key technical decisions"
+  - id: scaffold
+    stage: build
+    capabilities_needed: [cap-scaffold-experiment]
+    output_type: experiment-scaffold
+    gate_requires: [adr, roadmap-mvp]
+    description: "Minimal runnable experiment framework"
+  - id: data-pipeline
+    stage: build
+    capabilities_needed: [cap-build-data-pipeline]
+    output_type: data-pipeline
+    gate_requires: [experiment-scaffold]
+    description: "Data loading, split, and contract"
+  - id: model
+    stage: build
+    capabilities_needed: [cap-build-model-loss]
+    output_type: model-implementation
+    gate_requires: [data-pipeline]
+    description: "Model + loss + prior injection"
+  - id: eval-harness
+    stage: build
+    capabilities_needed: [cap-render-eval-harness]
+    output_type: eval-harness
+    gate_requires: [model-implementation]
+    description: "Unified evaluation script"
+  - id: track
+    stage: operate
+    capabilities_needed: [cap-track-experiment]
+    output_type: experiment-log
+    gate_requires: [eval-harness]
+    description: "Auto-record config + metrics"
+  - id: evidence
+    stage: verify
+    capabilities_needed: [cap-assemble-evidence-bundle]
+    output_type: evidence-bundle
+    gate_requires: [experiment-log]
+    description: "Package experiment evidence"
+  - id: metric-sanity
+    stage: verify
+    capabilities_needed: [cap-check-metric-sanity]
+    output_type: sanity-report
+    gate_requires: [evidence-bundle]
+    description: "Check metric robustness"
+  - id: reproducibility
+    stage: verify
+    capabilities_needed: [cap-check-reproducibility]
+    output_type: reproducibility-report
+    gate_requires: [evidence-bundle]
+    description: "Verify reproducibility"
+  - id: quality-gate
+    stage: verify
+    capabilities_needed: [cap-decide-quality-gate]
+    output_type: gate-verdict
+    gate_requires: [evidence-bundle, sanity-report, reproducibility-report]
+    description: "PASS/FAIL verdict"
+  - id: retro
+    stage: review
+    capabilities_needed: [cap-extract-retro]
+    output_type: experiment-retro
+    gate_requires: [gate-verdict]
+    description: "Experiment retrospective"
+  - id: principles
+    stage: review
+    capabilities_needed: [cap-extract-design-principles]
+    output_type: design-principles
+    gate_requires: [experiment-retro]
+    description: "Extract reusable principles"
+  - id: decision-gate
+    stage: review
+    capabilities_needed: [cap-decide-gate]
+    output_type: decision-gate
+    gate_requires: [experiment-retro, design-principles]
+    description: "Continue / change direction / write paper"
+  - id: card
+    stage: knowledge
+    capabilities_needed: [cap-capture-card]
+    output_type: knowledge-card
+    gate_requires: [decision-gate]
+    description: "Create knowledge card"
+  - id: hub-sync
+    stage: knowledge
+    capabilities_needed: [cap-sync-hub]
+    output_type: hub-update
+    gate_requires: [knowledge-card]
+    description: "Write back hypothesis status + numbers to hub"
+  - id: index
+    stage: knowledge
+    capabilities_needed: [cap-sync-index]
+    output_type: index-entry
+    gate_requires: [hub-update]
+    description: "Tag and index"
+branches:
+  - from: decision-gate
+    condition: "continue experiment (next MVP)"
+    goto: roadmap
+  - from: decision-gate
+    condition: "change direction"
+    goto: problem-tree
+  - from: decision-gate
+    condition: "publish-worthy"
+    goto_path: path-paper-draft-peer-review-loop
+  - from: quality-gate
+    condition: "FAIL"
+    goto: scaffold
+applicable_policies:
+  required: [rule-quality-deliverable-minimum, rule-completion-guard]
+  recommended: [rule-research-reproducibility]
+completion_guard:
+  enabled: true
+  required_evidence: [evidence-bundle, gate-verdict, knowledge-card]
+  completion_promise: "ALL_STEPS_COMPLETE"
+stop_rules:
+  consecutive_failures: 3
+  budget_exhausted: "walk to decision-gate"
+  single_mvp_timeout: "fail + record reason"
