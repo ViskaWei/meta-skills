@@ -36,22 +36,56 @@
 \begin{document}
 
 %% ============================================================
-%% SECTION: AGENT SKILL ARCHITECTURE
+%% MAIN BODY — AGENT SKILL ARCHITECTURE (~1 page)
 %% ============================================================
 
 \section{Agent Skill Architecture}
 \label{sec:agent-architecture}
 
-Complex scientific workflows demand agents that can not only execute multi-step tasks but also learn from their own execution.
-A static collection of capabilities---however well-organized---cannot anticipate every failure mode, adapt to new domains, or close quality gaps discovered only at runtime.
+Complex scientific workflows demand agents that not only execute multi-step tasks but also learn from their own execution.
+A static collection of capabilities cannot anticipate every failure mode, adapt to new domains, or close quality gaps discovered only at runtime.
 We address this challenge with a meta-skills framework built on two pillars: a \emph{three-layer invocation hierarchy} that separates routing, orchestration, and atomic execution; and a \emph{closed-loop evolution mechanism} that transforms every task execution into a learning opportunity.
-The layered architecture enables compositional reuse while presenting users with a simple interface.
-The evolution loop systematically feeds execution observations back into the system's own capabilities, quality policies, and accumulated knowledge.
+
+\paragraph{Three-layer invocation model.}
+The system organizes capabilities into three layers of increasing granularity (Figure~\ref{fig:three-layer}).
+\emph{Entry commands} (L0) are thin routers that accept natural-language requests---three commands (\texttt{/meta}, \texttt{/build}, \texttt{/research}) constitute the entire user-facing interface.
+\emph{Path templates} (L1) are declarative YAML recipes specifying step sequences, gate requirements, and branch conditions; eight templates cover workflows from skill health audits to hypothesis-driven research.
+\emph{Atomic capabilities} (L2) are 29 contract-driven building blocks with typed inputs and outputs, organized across an eight-stage lifecycle (Discover through Knowledge).
+Cross-cutting \emph{quality policies} inject verification rules automatically at gate transitions based on artifact types, decoupling what the agent can do, how it sequences actions, and when it enforces quality.
+A visibility boundary hides all internal layers behind \texttt{\_}-prefixed directories; users see only three commands.
+
+\paragraph{Design principles.}
+Two ideas enable the system to grow without destabilizing.
+First, components are separated by \emph{change rate}: L0 commands are frozen, L2 capabilities evolve rapidly in hidden directories, and policies evolve slowly as failure modes are codified---additions to one layer require no coordinated changes to others.
+Second, constraints are enforced \emph{mechanically}: naming governance (18 controlled verbs, 91 canonical objects) is checked by validation scripts, and quality gates fire at every transition regardless of whether the agent ``remembers'' to invoke them.
+
+\paragraph{Continuous self-evolution.}
+The architecture's central contribution is a closed loop that makes the system self-improving (Figure~\ref{fig:evolution-loop}).
+Every L0 command defaults to a dual-agent team: an \emph{executor} performs the user's task while an \emph{observer} (running on a cheaper model) monitors for improvement signals---policy violations, capability gaps, step deviations, repeated errors, quality misses, and automation candidates.
+Overhead remains low (${\sim}1.05\times$ for simple tasks, $1.3$--$1.5\times$ for complex ones) through a complexity tiering system that adjusts observer depth.
+Each finding maps to a concrete change: a new L2 capability, an L1 path adjustment, or a new \texttt{rule-*} policy.
+
+Quality policies function as a \emph{one-way ratchet}: once a failure mode is identified, it is formalized into a policy enforced mechanically at every subsequent execution, preventing the same class of error from recurring.
+Cross-session continuity relies on a three-layer memory protocol---an auto-injected summary (L1), a structured handoff document (L2), and a permanent session archive (L3)---all updated before session termination.
+Observer reports feed into a recurring-patterns index that elevates repeated signals for systematic resolution, closing the loop from execution back to architecture.
+The eight-stage lifecycle further supports a hypothesis-driven research pipeline (\texttt{/research}) with three feedback loops---fail-to-fix, iterate, and pivot---and a persistent hypothesis tree that accumulates results across experiments.
+
+
+%% ============================================================
+%% APPENDIX
+%% ============================================================
+\clearpage
+\appendix
+
+\section{Agent Architecture Details}
+\label{app:agent-architecture}
+
+This appendix provides detailed descriptions and figures for the agent skill architecture presented in Section~\ref{sec:agent-architecture}.
 
 
 %% ------------------------------------------------------------
 \subsection{Three-Layer Invocation Model}
-\label{sec:three-layer}
+\label{app:three-layer}
 
 The system organizes agent capabilities into three layers of increasing granularity (Figure~\ref{fig:three-layer}).
 At the top, \emph{entry commands} (Layer~0) serve as thin routers: three commands---\texttt{/meta}, \texttt{/build}, and \texttt{/research}---accept natural-language requests and match them to appropriate workflows.
@@ -70,7 +104,7 @@ A visibility boundary separates the user-facing interface from internal complexi
 %% ============================================================
 %% FIGURE 1: Three-Layer Architecture
 %% ============================================================
-\begin{figure}[t]
+\begin{figure}[ht]
 \centering
 \begin{tikzpicture}[
     >=Stealth,
@@ -146,9 +180,9 @@ A visibility boundary separates the user-facing interface from internal complexi
 
 %% ------------------------------------------------------------
 \subsection{Design Principles}
-\label{sec:design-principles}
+\label{app:design-principles}
 
-Two foundational ideas shape the architecture and explain why the system can grow without destabilizing.
+Two foundational ideas shape the architecture and enable the system to grow without destabilizing.
 
 \paragraph{Separate components that change at different rates.}
 Entry commands (L0) are frozen and rarely modified.
@@ -163,12 +197,11 @@ Naming governance (18 controlled verbs, 91 canonical objects) is enforced by val
 Structural checks catch malformed capabilities before deployment.
 Cross-cutting policies inject quality gates at every gate transition automatically.
 This design makes violations structurally impossible rather than merely discouraged: a naming error triggers a linter failure, and a missing quality check fires regardless of whether the agent ``remembers'' to run it.
-Together, these two principles---separation by change rate and mechanical enforcement---create a foundation stable enough to support continuous modification, which the next subsection exploits.
 
 
 %% ------------------------------------------------------------
 \subsection{Continuous Self-Evolution}
-\label{sec:self-evolution}
+\label{app:self-evolution}
 
 The architecture's central contribution is the closed loop that makes the system \emph{self-improving}: every skill execution feeds observations back into the system's own capabilities, policies, and knowledge (Figure~\ref{fig:evolution-loop}).
 Four mechanisms form this loop.
@@ -207,7 +240,7 @@ This trend-detection mechanism transforms individual observations into structura
 %% ============================================================
 %% FIGURE 2: Continuous Self-Evolution Loop
 %% ============================================================
-\begin{figure}[t]
+\begin{figure}[ht]
 \centering
 \begin{tikzpicture}[
     >=Stealth,
@@ -284,7 +317,7 @@ This trend-detection mechanism transforms individual observations into structura
 
 %% ------------------------------------------------------------
 \subsection{Research Pipeline Integration}
-\label{sec:research-pipeline}
+\label{app:research-pipeline}
 
 The eight-stage lifecycle supports a hypothesis-driven research pipeline instantiated through the \texttt{/research} command.
 The pipeline transforms a research question into validated evidence through three explicit feedback loops.
