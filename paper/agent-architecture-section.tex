@@ -125,28 +125,30 @@ A visibility boundary separates the user-facing interface from internal complexi
 
 % === LAYER 0 (visible zone) ===
 \node[band=l0color] (l0) at (0, 0) {};
-\node[layerlbl=l0color, anchor=east] at ([xshift=-3pt]l0.west) {L0};
-\node[cmdbox] at (-3.5, 0) {/meta};
-\node[cmdbox] at (-1.2, 0) {/build};
-\node[cmdbox] at (1.3, 0) {/research};
-\node[sublbl, anchor=west] at ([xshift=3pt]l0.east) {\textit{entry cmds}};
+\node[layerlbl=l0color, anchor=east] at ([xshift=-4pt]l0.west) {L0};
+\node[cmdbox] at (-2.5, 0) {/meta};
+\node[cmdbox] at (0, 0) {/build};
+\node[cmdbox] at (2.5, 0) {/research};
+\node[sublbl, anchor=west] at ([xshift=4pt]l0.east) {\textit{entry cmds}};
 
-% Visibility annotation
-\draw[black!20, dashed, line width=0.5pt] (-6.5, -1.1) -- (6.8, -1.1);
-\node[vislbl, anchor=east] at (6.8, -0.85) {visible to user};
-\node[vislbl, anchor=east] at (6.8, -1.35) {\texttt{\_}-prefixed (internal)};
+% Visibility annotation (symmetric, anchored to band edges)
+\coordinate (visR) at ([xshift=2pt, yshift=-0.35cm]l0.south east);
+\coordinate (visL) at ([xshift=-2pt, yshift=-0.35cm]l0.south west);
+\draw[black!20, dashed, line width=0.5pt] (visL) -- (visR);
+\node[vislbl, anchor=south east] at ([yshift=0.06cm]visR) {visible to user};
+\node[vislbl, anchor=north east] at ([yshift=-0.06cm]visR) {\texttt{\_}-prefixed (internal)};
 
 % === LAYER 1 ===
 \node[band=l1color] (l1) at (0, -2.2) {};
-\node[layerlbl=l1color, anchor=east] at ([xshift=-3pt]l1.west) {L1};
+\node[layerlbl=l1color, anchor=east] at ([xshift=-4pt]l1.west) {L1};
 \node[pathbox] at (-3.5, -2.2) {skill-health};
-\node[pathbox] at (-0.3, -2.2) {hypothesis-to-evidence};
+\node[pathbox] at (0, -2.2) {hypothesis-to-evidence};
 \node[pathbox] at (3.5, -2.2) {improve-loop};
-\node[sublbl, anchor=west] at ([xshift=3pt]l1.east) {\textit{path templates}};
+\node[sublbl, anchor=west] at ([xshift=4pt]l1.east) {\textit{path templates}};
 
 % === LAYER 2 ===
 \node[band=l2color, minimum height=1.8cm] (l2) at (0, -4.8) {};
-\node[layerlbl=l2color, anchor=east] at ([xshift=-3pt]l2.west) {L2};
+\node[layerlbl=l2color, anchor=east] at ([xshift=-4pt]l2.west) {L2};
 \node[stagebox=discoverblue]  at (-5.25, -4.55) {Discover};
 \node[stagebox=decideorange]  at (-3.75, -4.55) {Decide};
 \node[stagebox=buildgreen]    at (-2.25, -4.55) {Build};
@@ -154,21 +156,21 @@ A visibility boundary separates the user-facing interface from internal complexi
 \node[stagebox=deliverred]    at (0.75, -4.55) {Deliver};
 \node[stagebox=operategray]   at (2.25, -4.55) {Operate};
 \node[stagebox=reviewteal]    at (3.75, -4.55) {Review};
-\node[stagebox=knowledgegold, minimum width=1.4cm] at (5.25, -4.55) {Knowledge};
+\node[stagebox=knowledgegold] at (5.25, -4.55) {Knowledge};
 \node[sublbl] at (0, -5.45) {29 contract-driven atomic capabilities with typed inputs / outputs};
-\node[sublbl, anchor=west] at ([xshift=3pt]l2.east) {\textit{capabilities}};
+\node[sublbl, anchor=west] at ([xshift=4pt]l2.east) {\textit{capabilities}};
 
 % === ARROWS L0 -> L1 ===
 \draw[arrw] (0, -0.75) -- (0, -1.45);
-\node[sublbl, anchor=west] at (0.15, -1.1) {\textit{keyword match}};
+\node[sublbl, anchor=west] at (0.12, -1.25) {\textit{keyword match}};
 
 % === ARROWS L1 -> L2 ===
 \draw[arrw] (0, -2.95) -- (0, -3.9);
-\node[sublbl, anchor=west] at (0.15, -3.4) {\textit{resolve \& expand}};
+\node[sublbl, anchor=west] at (0.12, -3.4) {\textit{resolve \& expand}};
 
-% === QUALITY POLICIES (bottom strip) ===
+% === QUALITY POLICIES (bottom strip, symmetric via band anchors) ===
 \draw[policyred, line width=1pt, dashed, rounded corners=4pt]
-    (-6.6, -6.1) rectangle (6.9, -6.6);
+    ([xshift=-2pt, yshift=-0.3cm]l2.south west) rectangle ([xshift=2pt, yshift=-0.8cm]l2.south east);
 \node[font=\scriptsize\bfseries\sffamily, text=policyred] at (0, -6.35)
     {Quality Policies --- auto-inject at gate transitions based on artifact type};
 
@@ -244,73 +246,77 @@ This trend-detection mechanism transforms individual observations into structura
 \centering
 \begin{tikzpicture}[
     >=Stealth,
-    loopnode/.style={rounded corners=4pt, draw=evolvegreen!70, fill=evolvegreen!10,
-        minimum width=2.0cm, minimum height=0.7cm,
-        font=\small\sffamily, align=center, line width=0.8pt},
-    memnode/.style={rounded corners=3pt, draw=memoryblue!70, fill=memoryblue!10,
-        minimum width=3.8cm, minimum height=0.55cm,
-        font=\footnotesize\sffamily, align=center},
-    polbar/.style={rounded corners=3pt, draw=policyred!70, fill=policyred!8,
-        minimum width=2.6cm, minimum height=0.55cm,
-        font=\footnotesize\sffamily, align=center},
-    looparr/.style={->, evolvegreen!70!black, line width=1.0pt},
-    memarr/.style={<->, memoryblue!60!black, line width=0.7pt, dashed},
-    polarr/.style={<->, policyred!60!black, line width=0.7pt, dashed},
-    annot/.style={font=\scriptsize\sffamily, text=black!55},
-    heading/.style={font=\small\bfseries\sffamily},
+    % --- Loop node styles (2 colors: action vs analysis) ---
+    actnode/.style={  % Left column: Execute + Evolve (action/doing)
+        rounded corners=4pt, draw=discoverblue!60, fill=discoverblue!7,
+        minimum width=2.6cm, minimum height=0.85cm,
+        font=\small\sffamily, align=center, line width=0.9pt},
+    monnode/.style={  % Right column: Observe + Review (monitoring/evaluating)
+        rounded corners=4pt, draw=reviewteal!60, fill=reviewteal!7,
+        minimum width=2.6cm, minimum height=0.85cm,
+        font=\small\sffamily, align=center, line width=0.9pt},
+    % --- Mechanism box style (parametric color) ---
+    mechbox/.style={
+        rounded corners=3pt, draw=#1!50, fill=#1!6,
+        minimum height=0.55cm, inner sep=5pt,
+        font=\footnotesize\sffamily, align=center, line width=0.6pt},
+    % --- Annotation ---
+    annot/.style={font=\scriptsize\sffamily, text=black!50},
+    % --- Edge styles ---
+    primary/.style={->, black!70, line width=1.0pt, shorten >=1pt, shorten <=1pt},
+    feedbackedge/.style={->, black!35, line width=0.7pt, dotted,
+        shorten >=1pt, shorten <=1pt},
+    crossedge/.style={->, black!25, line width=0.5pt, dashed},
 ]
 
-% === LEFT: Evolution loop (circular) ===
-\node[heading] at (-3.0, 3.0) {Evolution Loop};
+% === MAIN LOOP (4 nodes, clockwise rectangle) ===
+% Left column (blue) = action; Right column (teal) = analysis
+\node[actnode] (exec) {Execute};
+\node[monnode, right=2.8cm of exec] (observe) {Observe};
+\node[monnode, below=1.8cm of observe] (review) {Review};
+\node[actnode, below=1.8cm of exec] (evolve) {Evolve};
 
-\node[loopnode] (exec)    at (-4.5, 1.8) {Execute};
-\node[loopnode] (observe) at (-1.5, 1.8) {Observe};
-\node[loopnode] (report)  at (-1.5, -0.2) {Report};
-\node[loopnode] (approve) at (-4.5, -0.2) {Approve};
-\node[loopnode] (evolve)  at (-3.0, -2.0) {Evolve};
+% Subtle background grouping
+\begin{scope}[on background layer]
+    \node[fit=(exec)(observe)(review)(evolve),
+        rounded corners=8pt, fill=black!2, draw=black!8, line width=0.3pt,
+        inner sep=15pt] {};
+\end{scope}
 
-% Loop arrows
-\draw[looparr] (exec.east) -- (observe.west)
-    node[midway, above, annot] {6 signal types};
-\draw[looparr] (observe.south) -- (report.north);
-\draw[looparr] (report.west) -- (approve.east)
-    node[midway, above, annot] {user review};
-\draw[looparr] (approve.south) -- ++(0, -0.5) -| (evolve.west);
-\draw[looparr] (evolve.east) -- ++(1.0, 0) -- ++(0, 2.5) -- ++(-1.5, 0) -- (exec.south east);
+% Clockwise primary arrows
+\draw[primary] (exec) -- node[above, annot] {6 signal types} (observe);
+\draw[primary] (observe) -- (review);
+\draw[primary] (review) -- node[below, annot] {approve} (evolve);
 
-% Annotations on evolve outputs
-\node[annot, anchor=north] at (-3.0, -2.55) {$\rightarrow$ new L2 cap ~/~ L1 path ~/~ rule-* policy};
+% Feedback: Evolve -> Execute (left channel, outside the rectangle)
+\draw[feedbackedge] (evolve.west) -- ++(-0.9, 0) |- (exec.west);
 
-% Dual-agent annotation
-\node[annot, anchor=north west] at (-5.5, 1.3) {executor (Sonnet)};
-\node[annot, anchor=north east] at (-0.2, 1.3) {observer (Haiku)};
+% Dual-agent annotations
+\node[annot, above=0.3cm of exec] {executor (Sonnet)};
+\node[annot, above=0.3cm of observe] {observer (Haiku)};
 
-% === RIGHT: Memory stack ===
-\node[heading] at (4.5, 3.0) {Cross-Session Memory};
+% Evolve output annotation (centered below the loop)
+\node[annot] at ($(evolve.south east)!0.5!(review.south west) + (0, -0.3)$)
+    {$\rightarrow$ new L2 cap ~/~ L1 path ~/~ rule-*};
 
-\node[memnode] (m1) at (4.5, 1.8) {L1: MEMORY.md (auto-injected)};
-\node[memnode] (m2) at (4.5, 0.6) {L2: HANDOFF.md (structured)};
-\node[memnode] (m3) at (4.5, -0.6) {L3: Session archive (permanent)};
+% === SUPPORTING MECHANISMS (aligned below loop) ===
+\node[mechbox=policyred] (pol) at ($(evolve.south) + (0, -2.2)$)
+    {Policy Ratchet};
+\node[mechbox=memoryblue] (mem) at ($(review.south) + (0, -2.2)$)
+    {Three-Layer Memory};
 
-% Stack brackets
-\draw[memoryblue!50, line width=0.6pt] (2.3, 2.2) -- (2.3, -1.0);
+% Mechanism sub-labels
+\node[annot, anchor=north] at ([yshift=-0.08cm]pol.south)
+    {failure $\rightarrow$ rule $\rightarrow$ enforce};
+\node[annot, anchor=north] at ([yshift=-0.08cm]mem.south)
+    {L1 auto $\cdot$ L2 handoff $\cdot$ L3 archive};
 
-% Memory labels
-\node[annot, anchor=west] at (6.6, 1.8) {every session};
-\node[annot, anchor=west] at (6.6, 0.6) {read-on-start};
-\node[annot, anchor=west] at (6.6, -0.6) {write-on-end};
-
-% === CENTER-BOTTOM: Policy enforcement bar ===
-\node[polbar] (pol) at (4.5, -2.0) {Policy enforcement};
-\node[annot, anchor=north] at (4.5, -2.45) {artifact-type $\rightarrow$ auto-inject rules};
-
-% === Cross connections ===
-\draw[memarr] (report.east) -- (m3.west);
-\draw[memarr] (exec.north) -- ++(0, 0.5) -| (m1.north west);
-\draw[polarr] (evolve.south) -- ++(0, -0.6) -| (pol.west);
+% Cross-links from loop to mechanisms
+\draw[crossedge] (evolve) -- (pol);
+\draw[crossedge] (review) -- (mem);
 
 \end{tikzpicture}
-\caption{Continuous self-evolution loop.  \textbf{Left}: every skill execution spawns a dual-agent team; the observer detects improvement signals and proposes changes that, once approved, feed back as new capabilities, paths, or policies.  \textbf{Right}: a three-layer memory stack ensures cross-session continuity, while artifact-type-driven policy enforcement mechanically injects quality gates.}
+\caption{Continuous self-evolution loop.  Every skill execution spawns a dual-agent team: an executor performs the task while an observer detects improvement signals.  Findings are reviewed and, once approved, fed back as new capabilities, paths, or policies.  A policy ratchet mechanically enforces every codified failure mode; a three-layer memory stack ensures cross-session continuity.}
 \label{fig:evolution-loop}
 \end{figure}
 
