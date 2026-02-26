@@ -36,9 +36,9 @@ conflict_watch:
   - rule_id: rule-improve-verify-result
     relationship: complement
     note: "Improve verify checks artifact quality; entropy gate checks system consistency"
-  - rule_id: rule-skill-build-gate
+  - rule_id: rule-skill-health-gate
     relationship: complement
-    note: "Skill build gate checks individual skill; entropy gate checks cross-system consistency"
+    note: "Skill health gate checks individual skill; entropy gate checks cross-system consistency"
 
 injection_point:
   after_step: verify-clean

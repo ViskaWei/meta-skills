@@ -64,10 +64,6 @@ policies:
     file: "_policies/rule-capability-gap-detection.yaml"
     triggers: ["*"]
     scope: governance
-  - id: rule-skill-build-gate
-    file: "_policies/rule-skill-build-gate.yaml"
-    triggers: [skill-artifact]
-    scope: governance
   - id: rule-completion-guard
     file: "_policies/rule-completion-guard.yaml"
     triggers: ["*"]

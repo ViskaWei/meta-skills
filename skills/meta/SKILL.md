@@ -64,7 +64,6 @@ default_rules:
   - rule-skill-health-gate               # auto-injected when health
   - rule-entropy-cleanup-gate            # auto-injected when cleanup
   - rule-capability-gap-detection        # auto-injected when gaps
-  - rule-skill-build-gate                # auto-injected when quality/create
 ```
 
 ---

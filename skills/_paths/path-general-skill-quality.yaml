@@ -162,7 +162,7 @@ applicable_policies:
   required:
     - rule-quality-deliverable-minimum
     - rule-improve-verify-result
-    - rule-skill-build-gate
+    - rule-skill-health-gate
     - rule-completion-guard
   recommended: []
 

@@ -186,7 +186,7 @@ applicable_policies:
     - rule-capability-gap-detection
     - rule-completion-guard
   recommended:
-    - rule-skill-build-gate
+    - rule-skill-health-gate
 
 quality_standards:
   user_confirmed: "ADR exists before any capabilities created"

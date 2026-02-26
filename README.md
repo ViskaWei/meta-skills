@@ -78,8 +78,7 @@ Each capability has a standardized interface defined in YAML frontmatter:
 | `rule-completion-guard` | Every path -- ensures all steps complete |
 | `rule-quality-deliverable-minimum` | Build/deliver -- minimum quality bar |
 | `rule-improve-verify-result` | Verify -- before/after evidence required |
-| `rule-skill-build-gate` | Build stage -- naming + contract + registry checks |
-| `rule-skill-health-gate` | Health check -- 6-dimension pass criteria |
+| `rule-skill-health-gate` | Health check + build gate -- naming, contract, registry, 6-dimension pass criteria |
 | `rule-entropy-cleanup-gate` | Cleanup -- 9-point consistency pass criteria |
 | `rule-capability-gap-detection` | Gap analysis -- gap classification standards |
 | `rule-layer-dependency` | All -- enforces layer separation (L0/L1/L2) |
