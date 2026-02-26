@@ -25,7 +25,7 @@ steps:
     description: >
       Deep-read target skill + all dependencies:
       (1) SKILL.md / path YAML / cap block / rule YAML
-      (2) Registry entries (skills-registry.yaml, capability-index.yaml)
+      (2) Registry entries (skills-registry.yaml, capability-catalog.yaml)
       (3) Referenced L2 blocks, parent skill routing table
       (4) skill-creator-standard as the quality benchmark
 
@@ -48,7 +48,7 @@ steps:
       Run deterministic checks:
       (1) tools/validate_contracts.sh — YAML frontmatter contracts
       (2) Naming lint — kebab-case, controlled vocabulary, correct prefix
-      (3) Registry completeness — capability ID in capability-index, path ID in CATALOG
+      (3) Registry completeness — capability ID in capability-catalog, path ID in CATALOG
       (4) No orphan references — all referenced blocks exist
 
   - id: check-dedup
@@ -103,7 +103,7 @@ steps:
     gate_requires: [roadmap-mvp]
     description: >
       Apply improvements: update YAML, .md blocks, registry entries,
-      capability-index.yaml. Follow skill-creator-standard exactly.
+      capability-catalog.yaml. Follow skill-creator-standard exactly.
 
   - id: verify-deployment
     stage: verify
@@ -170,7 +170,7 @@ quality_standards:
   user_confirmed: "ADR exists before any changes applied"
   naming_correct: "All IDs follow controlled vocabulary (verbs.yaml, objects.yaml)"
   contracts_valid: "validate_contracts.sh PASS"
-  registry_complete: "All entries in skills-registry.yaml and capability-index.yaml"
+  registry_complete: "All entries in skills-registry.yaml and capability-catalog.yaml"
   deployment_ok: "setup.sh runs without errors"
   no_regressions: "Existing functionality preserved"
 

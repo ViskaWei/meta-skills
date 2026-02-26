@@ -35,7 +35,7 @@ steps:
     description: >
       Collect evidence of capability gaps from multiple sources:
       (1) Ghost cap references in path YAMLs — caps needed but not in active index
-      (2) Commented-out entries in capability-index.yaml — blocks without frontmatter
+      (2) Commented-out entries in capability-catalog.yaml — blocks without frontmatter
       (3) Path steps with no matching L2 block at all
       (4) Validator errors from validate_contracts.sh / validate_aliases.sh
       (5) Known agent struggle patterns (recurring manual interventions)
@@ -48,7 +48,7 @@ steps:
     gate_requires: [intake-manifest]
     description: >
       Map current capability coverage:
-      (1) Active caps in capability-index.yaml: count, by stage, by verb
+      (1) Active caps in capability-catalog.yaml: count, by stage, by verb
       (2) Total L2 blocks on disk vs registered in index
       (3) Caps referenced by paths vs caps that exist
       (4) Tool families in _tools/: coverage by domain
@@ -110,11 +110,11 @@ steps:
       Fill capability gaps based on confirmed scope:
       (1) Abstraction gaps → Create L2 block .md with YAML frontmatter
           - Add cap_id, verb, object, stage, inputs, outputs
-          - Register in capability-index.yaml
+          - Register in capability-catalog.yaml
       (2) Tool gaps → Create scripts in tools/ or enhance existing ones
       (3) Guardrail gaps → Create rule-*.yaml in _policies/
       (4) Documentation gaps → Add frontmatter to existing blocks
-      (5) Run tools/build_capability_index.sh to update index
+      (5) Run tools/build_capability_catalog.sh to update index
       Each creation follows skill-creator-standard naming conventions.
 
   - id: verify-capabilities
@@ -126,7 +126,7 @@ steps:
       Verify newly created capabilities:
       (1) bash tools/validate_contracts.sh → 0 new errors
       (2) bash tools/validate_aliases.sh → 0 new errors
-      (3) New blocks appear as active in capability-index.yaml
+      (3) New blocks appear as active in capability-catalog.yaml
       (4) Ghost cap references resolved for targeted paths
       (5) bash tools/setup.sh → all OK
       PASS = all validators clean AND ghost refs reduced.

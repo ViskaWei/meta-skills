@@ -92,7 +92,7 @@ Agent 根据 `--depth` 和 `--scope` 自动组合检查维度。
 | 类型 | 命名 | 存放 |
 |---|---|---|
 | L1 路径模板 | `path-<domain>-<outcome>` | `_paths/<id>.yaml` |
-| L2 原子能力 | `cap-<verb>-<object>` | `_stages/<stage>/sub/<action>.md` |
+| L2 原子能力 | `cap-<verb>-<object>` | `_caps/core/<action>.md` |
 | Cross-cutting 规则 | `rule-<scope>-<intent>` | `_policies/<id>.yaml` |
 
 ```

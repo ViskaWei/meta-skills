@@ -1,15 +1,14 @@
 #!/bin/bash
-# Validate Cap Contracts
+# Validate Cap Contracts (FDPS v4)
 # Checks YAML frontmatter in capability .md files for correctness.
 #
 # Validations:
 #   1. Required frontmatter fields present: cap_id, verb, object, stage, inputs, outputs, leveling
-#   2. cap_id exists in capability-index.yaml
+#   2. cap_id exists in capability-catalog.yaml
 #   3. verb is in verbs.yaml canonical list
 #   4. object is in objects.yaml canonical list
 #   5. input/output types are in artifact-types.yaml
 #   6. leveling format is Gx-Vy-Pz-Mk
-#   7. stage matches the file's directory path
 #
 # Usage: bash tools/validate_contracts.sh [--all | --file <path>]
 
@@ -17,7 +16,7 @@ set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 SKILLS_DIR="$REPO_DIR/skills"
-CAP_INDEX="$SKILLS_DIR/_resolver/capability-index.yaml"
+CAP_CATALOG="$SKILLS_DIR/_resolver/capability-catalog.yaml"
 VERBS_FILE="$SKILLS_DIR/_resolver/verbs.yaml"
 OBJECTS_FILE="$SKILLS_DIR/_resolver/objects.yaml"
 ARTIFACT_TYPES="$SKILLS_DIR/_resolver/artifact-types.yaml"
@@ -48,14 +47,14 @@ if [ "${1:-}" = "--file" ] && [ -n "${2:-}" ]; then
 elif [ "${1:-}" = "--all" ]; then
   while IFS= read -r -d '' f; do
     files_to_check+=("$f")
-  done < <(find "$SKILLS_DIR/_stages" -name "*.md" -path "*/sub/*" -print0 2>/dev/null)
+  done < <(find "$SKILLS_DIR/_caps" -name "*.md" -type f -print0 2>/dev/null)
 else
   # Default: only check files that have frontmatter
   while IFS= read -r -d '' f; do
     if head -1 "$f" | grep -q '^---$'; then
       files_to_check+=("$f")
     fi
-  done < <(find "$SKILLS_DIR/_stages" -name "*.md" -path "*/sub/*" -print0 2>/dev/null)
+  done < <(find "$SKILLS_DIR/_caps" -name "*.md" -type f -print0 2>/dev/null)
 fi
 
 for md_file in "${files_to_check[@]}"; do
@@ -90,13 +89,12 @@ for md_file in "${files_to_check[@]}"; do
   cap_id=$(echo "$frontmatter" | grep '^cap_id:' | awk '{print $2}' | tr -d '"')
   verb=$(echo "$frontmatter" | grep '^verb:' | awk '{print $2}' | tr -d '"')
   object=$(echo "$frontmatter" | grep '^object:' | awk '{print $2}' | tr -d '"')
-  stage=$(echo "$frontmatter" | grep '^stage:' | awk '{print $2}' | tr -d '"')
   leveling=$(echo "$frontmatter" | grep '^leveling:' | awk '{print $2}' | tr -d '"')
 
-  # Check cap_id exists in capability-index
+  # Check cap_id exists in capability-catalog
   if [ -n "$cap_id" ]; then
-    if ! grep -q "^  ${cap_id}:" "$CAP_INDEX" 2>/dev/null; then
-      echo "  ERROR: $rel_path — cap_id '$cap_id' NOT in capability-index.yaml"
+    if ! grep -q "^  ${cap_id}:" "$CAP_CATALOG" 2>/dev/null; then
+      echo "  ERROR: $rel_path — cap_id '$cap_id' NOT in capability-catalog.yaml"
       ERRORS=$((ERRORS + 1))
     fi
   fi
@@ -113,15 +111,6 @@ for md_file in "${files_to_check[@]}"; do
   if [ -n "$object" ]; then
     if ! echo "$canonical_objects" | grep -qw "$object"; then
       echo "  ERROR: $rel_path — object '$object' NOT in canonical object list"
-      ERRORS=$((ERRORS + 1))
-    fi
-  fi
-
-  # Check stage matches directory path
-  if [ -n "$stage" ]; then
-    dir_stage=$(echo "$rel_path" | grep -oP '_stages/\K[^/]+')
-    if [ "$stage" != "$dir_stage" ]; then
-      echo "  ERROR: $rel_path — stage '$stage' doesn't match directory '$dir_stage'"
       ERRORS=$((ERRORS + 1))
     fi
   fi

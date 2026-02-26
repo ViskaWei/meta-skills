@@ -30,11 +30,11 @@ Q4: 仅影响输出格式/样式/主题？
 Q5: ★关键测试★ 是否产出参与门禁链的 artifact？
   ├─ YES + 已有 cap-* 覆盖同 artifact → tool-adapter (multi-provider)
   │  放置: _tools/<family>/sub/*.md
-  │  注册: capability-index.yaml 中作为已有 cap-* 的额外 provider
+  │  注册: capability-catalog.yaml 中作为已有 cap-* 的额外 provider
   │
   ├─ YES + 无现有 cap-* → cap-* (新能力，需注册)
-  │  放置: _stages/<stage>/sub/*.md 或 _tools/<family>/sub/*.md
-  │  注册: objects.yaml + capability-index.yaml + skills-registry.yaml
+  │  放置: _caps/core/*.md 或 _tools/<family>/sub/*.md
+  │  注册: objects.yaml + capability-catalog.yaml + skills-registry.yaml
   │
   └─ NO → utility (辅助工具，不需 cap-*)
      放置: _tools/<family>/*.md
@@ -57,7 +57,7 @@ Q5: ★关键测试★ 是否产出参与门禁链的 artifact？
 | 特征 | cap-* (能力) | utility (辅助) |
 |---|---|---|
 | 产出物 | 可被下游消费的命名 artifact | 瞬态显示/格式转换/环境配置 |
-| 注册要求 | 必须在 capability-index + registry | 只需在 _tools/ 目录 |
+| 注册要求 | 必须在 capability-catalog + registry | 只需在 _tools/ 目录 |
 | 合约 | 有 input_types/output_types | 无 |
 | 门禁参与 | YES — artifact 类型触发 rule-* | NO |
 | 示例 | cap-render-slides → slides artifact | gpu-setup → 环境配置 |
@@ -69,7 +69,7 @@ Q5: ★关键测试★ 是否产出参与门禁链的 artifact？
 | 特征 | tool-adapter | 新 cap-* |
 |---|---|---|
 | 目标 artifact | 已有 cap-* 覆盖 | 无现有 cap-* |
-| 注册方式 | capability-index 中已有 cap-* 条目下新增 provider | 新增 cap-* 条目 |
+| 注册方式 | capability-catalog 中已有 cap-* 条目下新增 provider | 新增 cap-* 条目 |
 | Leveling | 通常 P1-M2 (较低) | 需独立评估 |
 | 示例 | citation-management → cap-check-citation-integrity 的 adapter | cap-render-slides (全新) |
 
@@ -84,8 +84,8 @@ Q5: ★关键测试★ 是否产出参与门禁链的 artifact？
 | 3 | **path-template** | path-<domain>-<outcome> | `_paths/` | skills-registry.yaml |
 | 4 | **external** | (marketplace name) | 引用 only | skills-registry.yaml source: marketplace |
 | 5 | **style** | (descriptive) | `_tools/<family>/` | none |
-| 6 | **tool-adapter** | cap-<verb>-<object> (existing) | `_tools/<family>/sub/` | capability-index.yaml |
-| 7 | **cap-*** | cap-<verb>-<object> (new) | `_stages/<stage>/sub/` or `_tools/` | full registration |
+| 6 | **tool-adapter** | cap-<verb>-<object> (existing) | `_tools/<family>/sub/` | capability-catalog.yaml |
+| 7 | **cap-*** | cap-<verb>-<object> (new) | `_caps/core/` or `_tools/` | full registration |
 | 8 | **utility** | (descriptive) | `_tools/<family>/` | none |
 
 ---
@@ -112,7 +112,7 @@ Q5: ★关键测试★ 是否产出参与门禁链的 artifact？
 |---|---|
 | `AMBIG` | 决策树中有歧义，需人工确认 |
 | `NEW_OBJECT` | 需要在 objects.yaml 新增名词 |
-| `NEW_CAP` | 需要在 capability-index.yaml 新增条目 |
+| `NEW_CAP` | 需要在 capability-catalog.yaml 新增条目 |
 | `NEW_ARTIFACT` | 需要在 artifact-types.yaml 新增类型 |
 | `NEEDS_REVIEW` | 预判不确定，需 review |
 
@@ -125,5 +125,5 @@ Q5: ★关键测试★ 是否产出参与门禁链的 artifact？
 2. 对每个逐一执行决策树 (Q1 → Q5)
 3. 记录分类结果 + flags
 4. 汇总到 docs/skill-decomposition-map.md
-5. 根据 flags 更新治理文件 (objects.yaml, capability-index.yaml, etc.)
+5. 根据 flags 更新治理文件 (objects.yaml, capability-catalog.yaml, etc.)
 ```

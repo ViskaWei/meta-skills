@@ -26,7 +26,7 @@ hard_rules:
       Instead, diagnose what is missing:
         - Missing tool? → Create it in _tools/<family>/
         - Missing guardrail? → Create rule-* in _policies/
-        - Missing abstraction? → Create cap-* in _stages/
+        - Missing abstraction? → Create cap-* in _caps/core/
         - Missing documentation? → Update CLAUDE.md or PLANS.md
       Then retry the original task.
     required: true
@@ -37,7 +37,7 @@ hard_rules:
       infrastructure investment. The capability should:
         - Follow 3-layer naming conventions
         - Have proper cap_id, inputs, outputs in frontmatter
-        - Be registered in capability-index.yaml
+        - Be registered in capability-catalog.yaml
         - Be deployable via setup.sh
     required: true
 

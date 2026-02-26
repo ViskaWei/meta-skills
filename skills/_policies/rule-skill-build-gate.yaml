@@ -30,7 +30,7 @@ rules:
     severity: BLOCK
     message: |
       创建完成后必须验证技能可被正确调用:
-      - L2 atom (cap-*): 通过 resolver 查找确认 capability-index.yaml 已注册
+      - L2 atom (cap-*): 通过 resolver 查找确认 capability-catalog.yaml 已注册
       - L1 path: 确认 _paths/CATALOG.md 已更新，YAML 格式正确
       - rule-*: 确认 _policies/ 下文件存在且 YAML 合法
       - 运行 bash tools/setup.sh 部署
@@ -38,7 +38,7 @@ rules:
     check: |
       1. setup.sh 输出无 FAIL
       2. validate_contracts.sh 无报错（如存在）
-      3. L2: grep cap-id 在 capability-index.yaml 中能找到
+      3. L2: grep cap-id 在 capability-catalog.yaml 中能找到
       4. L1: grep path-id 在 _paths/CATALOG.md 中能找到
 
   # Rule 3: 知识沉淀
@@ -69,7 +69,7 @@ rules:
 
       ## 测试证据
       - setup.sh: OK
-      - capability-index / CATALOG: 已注册
+      - capability-catalog / CATALOG: 已注册
       - 调用验证: <具体验证命令和结果>
 
 knowledge_base: /home/swei20/repos/claude-skills/claude-skills-private/knowledge/3-layer-skill

@@ -27,7 +27,7 @@ gate_criteria:
   - "Capability-index active count >= previous run (no regression)"
   - "All path-referenced capabilities exist in active index OR are documented as deferred"
   - "0 duplicate cap_id entries in skills-registry.yaml"
-  - "0 non-kebab-case filenames in _stages/ and _tools/"
+  - "0 non-kebab-case filenames in _caps/core/ and _tools/"
 
 conflict_watch:
   - rule_id: rule-quality-deliverable-minimum

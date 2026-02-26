@@ -26,7 +26,7 @@ hard_rules:
 
   - id: l2-no-upward-dependency
     rule: >
-      L2 capabilities (_stages/*/sub/*.md, _tools/*/*.md) MUST NOT reference
+      L2 capabilities (_caps/core/*/sub/*.md, _tools/*/*.md) MUST NOT reference
       or depend on L0 entry points or L1 path templates. They are atomic
       building blocks with no knowledge of the routing layer above them.
     required: true
@@ -61,7 +61,7 @@ dependency_matrix:
 validation_checks:
   - name: "No upward imports"
     pattern: "L2 files must not contain references to workflow/ or _paths/"
-    command: "grep -r 'workflow/' skills/_stages/ skills/_tools/ || true"
+    command: "grep -r 'workflow/' skills/_caps/core/ skills/_tools/ || true"
     expected: "No matches"
 
   - name: "Paths reference caps only"

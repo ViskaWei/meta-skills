@@ -1,0 +1,435 @@
+# Capability Catalog v4.0 — FDPS Architecture (Public Core)
+# Single source of truth for all capability metadata
+# Total capabilities: 29
+# Domains: core (all public capabilities live in core domain)
+#
+# Schema per entry (~35 tokens):
+#   title, domain, stage, verb, object, triggers?,
+#   input_types, output_types, leveling, summary?,
+#   block (new _caps/ path), policies?, cap_contract?
+
+version: '4.0.0'
+
+capabilities:
+
+  # === DISCOVER (7 caps) ===
+
+  cap-intake-brief:
+    title: "Input Manifest"
+    domain: core
+    stage: discover
+    verb: intake
+    object: brief
+    triggers: ["intake", "input"]
+    input_types: [url, file-path]
+    output_types: [intake-manifest]
+    leveling: G3-V0-P2-M3
+    summary: "Input manifest"
+    block: "_caps/core/intake.md"
+    cap_contract: true
+
+  cap-extract-brief:
+    title: "Discovery Brief"
+    domain: core
+    stage: discover
+    verb: extract
+    object: brief
+    triggers: ["start project", "new task", "brief"]
+    input_types: [goal-statement]
+    output_types: [brief]
+    leveling: G3-V0-P2-M3
+    summary: "1-page Brief"
+    block: "_caps/core/brief.md"
+    policies: [rule-quality-deliverable-minimum]
+    cap_contract: true
+
+  cap-extract-requirements:
+    title: "Requirements"
+    domain: core
+    stage: discover
+    verb: extract
+    object: requirements
+    triggers: ["spec", "requirements", "acceptance criteria"]
+    input_types: [brief, context-map]
+    output_types: [requirements-list]
+    leveling: G3-V0-P2-M3
+    summary: "Requirements list (MoSCoW)"
+    block: "_caps/core/requirements.md"
+    cap_contract: true
+
+  cap-map-problem-tree:
+    title: "Problem Tree"
+    domain: core
+    stage: discover
+    verb: map
+    object: problem-tree
+    triggers: ["problem tree", "问题树"]
+    input_types: [brief]
+    output_types: [problem-tree]
+    leveling: G3-V1-P2-M3
+    summary: "Structured problem decomposition"
+    block: "_caps/core/problem-tree.md"
+    cap_contract: true
+
+  cap-map-hypothesis-tree:
+    title: "Hypothesis Tree"
+    domain: core
+    stage: discover
+    verb: map
+    object: hypothesis-tree
+    triggers: ["hypothesis", "假设树"]
+    input_types: [goal-statement]
+    output_types: [hypothesis-tree]
+    leveling: G2-V1-P1-M1
+    summary: "Falsifiable hypothesis tree"
+    block: "_caps/core/hypothesis-tree.md"
+    cap_contract: true
+
+  cap-extract-metrics-contract:
+    title: "Metrics Contract"
+    domain: core
+    stage: discover
+    verb: extract
+    object: metrics-contract
+    triggers: ["metrics", "评估口径"]
+    input_types: [hypothesis-tree]
+    output_types: [metrics-contract]
+    leveling: G3-V1-P2-M3
+    summary: "Evaluation metrics + thresholds"
+    block: "_caps/core/metrics-contract.md"
+    cap_contract: true
+
+  cap-extract-standards-scout:
+    title: "Standards Scout"
+    domain: core
+    stage: discover
+    verb: extract
+    object: standards-scout
+    triggers: ["standards", "best practices"]
+    input_types: [goal-statement, domain-description]
+    output_types: [standards-pack]
+    leveling: G3-V1-P1-M2
+    summary: "Standards pack with comparison"
+    block: "_caps/core/standards-scout.md"
+    cap_contract: true
+
+  # === DECIDE (5 caps) ===
+
+  cap-decide-adr:
+    title: "Architecture Decision Record"
+    domain: core
+    stage: decide
+    verb: decide
+    object: adr
+    triggers: ["adr", "decision"]
+    input_types: [option-matrix]
+    output_types: [adr]
+    leveling: G3-V0-P2-M3
+    summary: "ADR document"
+    block: "_caps/core/adr.md"
+    cap_contract: true
+
+  cap-compare-option-matrix:
+    title: "Option Matrix"
+    domain: core
+    stage: decide
+    verb: compare
+    object: option-matrix
+    triggers: ["compare", "matrix", "trade-off"]
+    input_types: [requirements-list]
+    output_types: [option-matrix]
+    leveling: G3-V0-P1-M2
+    summary: "Comparison matrix"
+    block: "_caps/core/option-matrix.md"
+    cap_contract: true
+
+  cap-plan-exec-plan:
+    title: "Execution Plan"
+    domain: core
+    stage: decide
+    verb: plan
+    object: exec-plan
+    triggers: ["exec plan", "execution plan"]
+    input_types: [roadmap-mvp, milestone-plan]
+    output_types: [exec-plan]
+    leveling: G3-V1-P1-M1
+    summary: "Concrete execution plan with timeline and dependencies"
+    block: "_caps/core/exec-plan.md"
+    cap_contract: true
+
+  cap-plan-roadmap:
+    title: "Roadmap MVP"
+    domain: core
+    stage: decide
+    verb: plan
+    object: roadmap
+    triggers: ["roadmap", "mvp"]
+    input_types: [hypothesis-tree, metrics-contract]
+    output_types: [roadmap-mvp]
+    leveling: G3-V1-P2-M3
+    summary: "MVP experiment list with stop-loss rules"
+    block: "_caps/core/roadmap-mvp.md"
+    cap_contract: true
+
+  cap-plan-experiment-design:
+    title: "Experiment Design"
+    domain: core
+    stage: decide
+    verb: plan
+    object: experiment-design
+    triggers: ["experiment design", "实验设计"]
+    input_types: [roadmap-mvp]
+    output_types: [experiment-design]
+    leveling: G3-V1-P2-M3
+    summary: "Rigorous experiment design"
+    block: "_caps/core/experiment-design.md"
+    cap_contract: true
+
+  # === BUILD (3 caps) ===
+
+  cap-scaffold-experiment:
+    title: "Scaffold"
+    domain: core
+    stage: build
+    verb: scaffold
+    object: experiment
+    triggers: ["scaffold", "setup", "init"]
+    input_types: [adr, roadmap-mvp]
+    output_types: [experiment-scaffold]
+    leveling: G3-V1-P2-M3
+    summary: "Minimal runnable experiment structure"
+    block: "_caps/core/scaffold.md"
+    cap_contract: true
+
+  cap-build-implementation:
+    title: "Implementation"
+    domain: core
+    stage: build
+    verb: build
+    object: implementation
+    triggers: ["implement", "build", "code"]
+    input_types: [task-list, experiment-scaffold]
+    output_types: [patched-artifact]
+    leveling: G3-V0-P2-M3
+    summary: "Complete implementation of artifact"
+    block: "_caps/core/implementation.md"
+    cap_contract: true
+
+  cap-map-tasks:
+    title: "Task Decomposition"
+    domain: core
+    stage: build
+    verb: map
+    object: tasks
+    triggers: ["decompose", "task list"]
+    input_types: [roadmap-mvp]
+    output_types: [task-list]
+    leveling: G3-V1-P2-M3
+    summary: "Structured task breakdown"
+    block: "_caps/core/task-decomposition.md"
+    cap_contract: true
+
+  # === VERIFY (3 caps) ===
+
+  cap-decide-quality-gate:
+    title: "Quality Gate"
+    domain: core
+    stage: verify
+    verb: decide
+    object: quality-gate
+    triggers: ["gate", "verify", "audit"]
+    input_types: [evidence-bundle]
+    output_types: [gate-verdict]
+    leveling: G3-V0-P3-M3
+    summary: "Pass/fail quality verdict with evidence"
+    block: "_caps/core/quality-gate.md"
+    policies: [rule-quality-deliverable-minimum]
+    cap_contract: true
+
+  cap-assemble-evidence-bundle:
+    title: "Evidence Bundle"
+    domain: core
+    stage: verify
+    verb: assemble
+    object: evidence-bundle
+    triggers: ["evidence", "proof"]
+    input_types: [experiment-log]
+    output_types: [evidence-bundle]
+    leveling: G3-V0-P2-M3
+    summary: "Collected evidence package"
+    block: "_caps/core/evidence-bundle.md"
+    cap_contract: true
+
+  cap-plan-test:
+    title: "Test Plan"
+    domain: core
+    stage: verify
+    verb: plan
+    object: test
+    input_types: [experiment-scaffold]
+    output_types: [test-plan]
+    leveling: G3-V1-P2-M3
+    summary: "Structured test plan"
+    block: "_caps/core/test-plan.md"
+    cap_contract: true
+
+  # === DELIVER (2 caps) ===
+
+  cap-package-output:
+    title: "Package"
+    domain: core
+    stage: deliver
+    verb: package
+    object: output
+    triggers: ["ship", "deliver", "package"]
+    input_types: [gate-verdict]
+    output_types: [delivery-package]
+    leveling: G3-V0-P2-M3
+    summary: "Delivery-ready package"
+    block: "_caps/core/package.md"
+    policies: [rule-quality-deliverable-minimum]
+    cap_contract: true
+
+  cap-publish-release:
+    title: "Release Notes"
+    domain: core
+    stage: deliver
+    verb: publish
+    object: release
+    input_types: [delivery-package]
+    output_types: [release-notes]
+    leveling: G2-V1-P1-M1
+    summary: "Release notes document"
+    block: "_caps/core/release-notes.md"
+    cap_contract: true
+
+  # === OPERATE (2 caps) ===
+
+  cap-build-runbook:
+    title: "Runbook"
+    domain: core
+    stage: operate
+    verb: build
+    object: runbook
+    triggers: ["runbook", "ops"]
+    input_types: [delivery-package]
+    output_types: [runbook]
+    leveling: G3-V1-P2-M3
+    summary: "Operational runbook"
+    block: "_caps/core/runbook.md"
+    cap_contract: true
+
+  cap-build-observability:
+    title: "Observability"
+    domain: core
+    stage: operate
+    verb: build
+    object: observability
+    input_types: [delivery-package]
+    output_types: [observability-config]
+    leveling: G3-V1-P2-M3
+    summary: "Observability configuration"
+    block: "_caps/core/observability.md"
+    cap_contract: true
+
+  # === REVIEW (4 caps) ===
+
+  cap-review-improvement:
+    title: "Improvement Critic"
+    domain: core
+    stage: review
+    verb: review
+    object: improvement
+    triggers: ["critic", "improvement review"]
+    input_types: [patched-artifact, gate-verdict]
+    output_types: [improvement-review]
+    leveling: G3-V1-P1-M1
+    summary: "Structured improvement review"
+    block: "_caps/core/improvement-critic.md"
+    cap_contract: true
+
+  cap-decide-gate:
+    title: "Decision Gate"
+    domain: core
+    stage: review
+    verb: decide
+    object: gate
+    triggers: ["decision gate"]
+    input_types: [experiment-retro, design-principles]
+    output_types: [decision-gate]
+    leveling: G3-V0-P1-M1
+    summary: "Go/no-go decision gate"
+    block: "_caps/core/decision-gate.md"
+    cap_contract: true
+
+  cap-extract-retro:
+    title: "Experiment Retro"
+    domain: core
+    stage: review
+    verb: extract
+    object: retro
+    triggers: ["retro", "复盘"]
+    input_types: [gate-verdict]
+    output_types: [experiment-retro]
+    leveling: G3-V1-P2-M3
+    summary: "Experiment retrospective"
+    block: "_caps/core/exp-retro.md"
+    cap_contract: true
+
+  cap-extract-design-principles:
+    title: "Design Principles Extract"
+    domain: core
+    stage: review
+    verb: extract
+    object: design-principles
+    triggers: ["design principles", "设计原则"]
+    input_types: [experiment-results, evidence-bundle]
+    output_types: [design-principles]
+    leveling: G2-V1-P1-M1
+    summary: "Reusable design principles"
+    block: "_caps/core/design-principles-extract.md"
+    cap_contract: true
+
+  # === KNOWLEDGE (3 caps) ===
+
+  cap-capture-card:
+    title: "Knowledge Capture"
+    domain: core
+    stage: knowledge
+    verb: capture
+    object: card
+    triggers: ["capture", "document", "card"]
+    input_types: [experiment-retro, design-principles]
+    output_types: [knowledge-card]
+    leveling: G3-V0-P2-M3
+    summary: "Structured knowledge card"
+    block: "_caps/core/capture.md"
+    cap_contract: true
+
+  cap-sync-hub:
+    title: "Hub Sync"
+    domain: core
+    stage: knowledge
+    verb: sync
+    object: hub
+    triggers: ["hub sync"]
+    input_types: [knowledge-card]
+    output_types: [hub-update]
+    leveling: G3-V1-P1-M1
+    summary: "Sync knowledge to hub"
+    block: "_caps/core/hub-sync.md"
+    cap_contract: true
+
+  cap-sync-index:
+    title: "Index"
+    domain: core
+    stage: knowledge
+    verb: sync
+    object: index
+    triggers: ["index", "tag"]
+    input_types: [knowledge-card]
+    output_types: [index-entry]
+    leveling: G3-V1-P2-M3
+    summary: "Index entry for knowledge"
+    block: "_caps/core/index.md"
+    cap_contract: true

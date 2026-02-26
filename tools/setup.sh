@@ -1,5 +1,5 @@
 #!/bin/bash
-# meta-skills Setup Script (Standalone)
+# meta-skills Setup Script (FDPS v4)
 # Deploys the meta-skills framework to ~/.claude/skills/
 #
 # Usage: bash tools/setup.sh
@@ -9,7 +9,7 @@ set -euo pipefail
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 SKILLS_DIR="$HOME/.claude/skills"
 
-echo "=== meta-skills Setup ==="
+echo "=== meta-skills Setup (FDPS v4) ==="
 echo "Source: $REPO_DIR"
 echo "Target: $SKILLS_DIR"
 echo ""
@@ -29,16 +29,17 @@ for cmd in "${L0_COMMANDS[@]}"; do
   fi
 done
 
-# --- Step 2: Deploy lifecycle stages ---
+# --- Step 2: Deploy capabilities (_caps/core/) ---
 echo ""
-echo "Step 2: Deploying lifecycle stages..."
-STAGES=(discover decide build verify deliver operate review knowledge)
-mkdir -p "$SKILLS_DIR/_stages"
-for stage in "${STAGES[@]}"; do
-  rm -rf "$SKILLS_DIR/_stages/$stage" 2>/dev/null || true
-  cp -rL "$REPO_DIR/skills/_stages/$stage" "$SKILLS_DIR/_stages/$stage"
-  echo "  OK: _stages/$stage"
-done
+echo "Step 2: Deploying capabilities..."
+mkdir -p "$SKILLS_DIR/_caps/core"
+if [ -d "$REPO_DIR/skills/_caps/core" ]; then
+  cp -rL "$REPO_DIR/skills/_caps/core/"*.md "$SKILLS_DIR/_caps/core/" 2>/dev/null || true
+  count=$(find "$SKILLS_DIR/_caps/core" -name "*.md" -type f | wc -l)
+  echo "  OK: _caps/core ($count caps)"
+else
+  echo "  FAIL: _caps/core not found in source!"
+fi
 
 # --- Step 3: Deploy architecture layers ---
 echo ""
@@ -70,7 +71,6 @@ echo "=== Verification ==="
 FAIL=0
 
 # Check L0 commands
-L0_COMMANDS=(meta build research improve)
 for cmd in "${L0_COMMANDS[@]}"; do
   if [ -f "$SKILLS_DIR/$cmd/SKILL.md" ]; then
     echo "  OK: $cmd/SKILL.md"
@@ -80,15 +80,14 @@ for cmd in "${L0_COMMANDS[@]}"; do
   fi
 done
 
-# Check stages
-for stage in "${STAGES[@]}"; do
-  if [ -d "$SKILLS_DIR/_stages/$stage" ]; then
-    echo "  OK: _stages/$stage"
-  else
-    echo "  FAIL: _stages/$stage missing!"
-    FAIL=1
-  fi
-done
+# Check capabilities
+cap_count=$(find "$SKILLS_DIR/_caps/core" -name "*.md" -type f 2>/dev/null | wc -l)
+if [ "$cap_count" -gt 0 ]; then
+  echo "  OK: _caps/core ($cap_count caps)"
+else
+  echo "  FAIL: _caps/core is empty!"
+  FAIL=1
+fi
 
 # Check architecture dirs
 for dir in _paths _policies _resolver _standards _tools; do
@@ -113,6 +112,7 @@ echo ""
 if [ "$FAIL" -eq 0 ]; then
   echo "=== Setup complete! ==="
   echo "4 L0 commands available: /meta, /build, /research, /improve"
+  echo "$cap_count core capabilities in _caps/core/"
   echo "Use '/meta health' to check framework health."
 else
   echo "=== Setup completed with warnings ==="

@@ -26,7 +26,7 @@ steps:
       Full inventory of the skill system:
       (1) Count L0 entries, L1 paths, L2 caps, rules, tools
       (2) Parse skills-registry.yaml for all entries
-      (3) Parse capability-index.yaml for all cap mappings
+      (3) Parse capability-catalog.yaml for all cap mappings
       (4) Parse _paths/CATALOG.md for path catalog
       (5) If scope is specified, filter to matching subset
 
@@ -64,8 +64,8 @@ steps:
     description: >
       Dimension 3 — Registry Consistency:
       (1) Every L2 block file has matching entry in skills-registry.yaml
-      (2) Every registry cap_id exists in capability-index.yaml
-      (3) Every capability-index entry points to an existing block file
+      (2) Every registry cap_id exists in capability-catalog.yaml
+      (3) Every capability-catalog entry points to an existing block file
       (4) No duplicate cap_ids across different blocks
       (5) No ghost references (paths referencing non-existent caps)
       Score: consistent / total × 100
@@ -79,7 +79,7 @@ steps:
       Dimension 4 — Deployment Health:
       (1) tools/setup.sh runs without errors
       (2) All visible skills have SKILL.md at target
-      (3) All _stages/ directories copied correctly
+      (3) All _caps/ directories copied correctly
       (4) Symlinks (_tools, registry) are valid
       Score: deployed / expected × 100
 
@@ -92,7 +92,7 @@ steps:
       Dimension 5 — Coverage & Gaps:
       (1) All 8 lifecycle stages have at least 2 capabilities
       (2) All L0 commands have at least 1 L1 path
-      (3) Ghost caps in capability-index (commented out, needs annotation)
+      (3) Ghost caps in capability-catalog (commented out, needs annotation)
       (4) Planned-but-unimplemented paths in CATALOG.md
       Score: implemented / (implemented + gaps) × 100
 

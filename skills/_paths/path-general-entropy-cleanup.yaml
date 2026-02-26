@@ -39,7 +39,7 @@ steps:
       Run all deterministic validators in parallel:
       (1) bash tools/validate_contracts.sh — YAML frontmatter contracts
       (2) bash tools/validate_aliases.sh — trigger word + cap reference validation
-      (3) bash tools/build_capability_index.sh — regenerate index, diff against current
+      (3) bash tools/build_capability_catalog.sh — regenerate index, diff against current
       Collect stdout/stderr, parse PASS/FAIL/WARNING counts.
 
   - id: cross-ref-registry
@@ -49,10 +49,10 @@ steps:
     gate_requires: [gate-verdict]
     description: >
       Cross-reference 4 authority sources for consistency:
-      (1) skills-registry.yaml (cap_id entries) vs capability-index.yaml (active entries)
-      (2) objects.yaml used_in declarations vs capability-index active entries
+      (1) skills-registry.yaml (cap_id entries) vs capability-catalog.yaml (active entries)
+      (2) objects.yaml used_in declarations vs capability-catalog active entries
       (3) _policies/*.yaml files vs skills-registry.yaml policies section
-      (4) Block files on disk (_stages/*/sub/*.md) vs capability-index entries
+      (4) Block files on disk (_caps/core/*.md) vs capability-catalog entries
       Output: count of orphaned, missing, and mismatched entries per source pair.
 
   - id: detect-ghost-refs
@@ -63,7 +63,7 @@ steps:
     description: >
       Scan all L1 path YAML files (_paths/*.yaml) for capability references:
       (1) Extract all cap-<verb>-<object> tokens from capabilities_needed fields
-      (2) Check each against active entries in capability-index.yaml
+      (2) Check each against active entries in capability-catalog.yaml
       (3) Flag as GHOST if referenced but not active (commented-out or absent)
       (4) Check for duplicate cap_id assignments in skills-registry.yaml
       (5) Verify object names against objects.yaml canonical list
@@ -80,7 +80,7 @@ steps:
       (2) .bak, *~, .swp temp files — count and list
       (3) Artifact types in block frontmatter not in artifact-types.yaml
       (4) Pathological directory nesting (>2 levels in _standards/)
-      (5) Naming violations: non-kebab-case files in _stages/ and _tools/
+      (5) Naming violations: non-kebab-case files in _caps/core/ and _tools/
       Output: stale_files[], missing_artifact_types[], naming_issues[].
 
   - id: compile-entropy-report
@@ -124,7 +124,7 @@ steps:
       Apply deterministic (safe) fixes:
       (1) Add YAML frontmatter to unannotated L2 blocks — use objects.yaml
           to derive correct cap-<verb>-<object> for each file
-      (2) Regenerate capability-index.yaml via build_capability_index.sh
+      (2) Regenerate capability-catalog.yaml via build_capability_catalog.sh
       (3) Register orphan policies in skills-registry.yaml
       (4) Add missing artifact types to artifact-types.yaml
       (5) Delete .nfs* / .bak / temp files (git-tracked dirs only)
@@ -154,7 +154,7 @@ steps:
       Re-run all validators to confirm clean state:
       (1) bash tools/validate_contracts.sh → 0 errors
       (2) bash tools/validate_aliases.sh → 0 errors
-      (3) bash tools/build_capability_index.sh → no commented-out entries for fixed blocks
+      (3) bash tools/build_capability_catalog.sh → no commented-out entries for fixed blocks
       (4) bash tools/setup.sh → all OK
       (5) Re-run ghost ref detection → 0 ghosts for fixed items
       Compare before/after counts. PASS = all targeted issues resolved.
@@ -168,7 +168,7 @@ steps:
     description: >
       Review cleanup completeness across 6 dimensions:
       (1) Frontmatter coverage: % of blocks with valid contracts
-      (2) Index health: active / total ratio in capability-index
+      (2) Index health: active / total ratio in capability-catalog
       (3) Path integrity: % of paths with all caps resolvable
       (4) Naming compliance: 0 violations in verbs/objects/kebab-case
       (5) Registry sync: policies, caps, paths all cross-referenced

@@ -141,8 +141,8 @@ Generate the full Standards Pack in a target directory:
 |---|---|---|
 | research-lookup | `_tools/research/lookup.md` | Web search for standards and frameworks |
 | literature-review | `_tools/paper/sub/literature-review.md` | Systematic review of standard documents |
-| knowledge-standards-update | `_stages/knowledge/sub/standards-update.md` | Absorb findings into local standards |
-| knowledge-template-library | `_stages/knowledge/sub/template-library.md` | Store reusable templates from pack |
+| knowledge-standards-update | `_caps/core/standards-update.md` | Absorb findings into local standards |
+| knowledge-template-library | `_caps/core/template-library.md` | Store reusable templates from pack |
 
 ## Edge Cases
 

@@ -15,11 +15,12 @@ RESOLVE(path_id, context_params):
   2. FOR EACH step IN template.steps:
      a. RESOLVE capability IDs
         - For each cap_id in step.capabilities_needed:
-          - Look up cap_id in `_resolver/capability-index.yaml`
+          - Look up cap_id in `_resolver/capability-catalog.yaml`
           - Validate verb from cap_id against `_resolver/verbs.yaml`
           - Validate object from cap_id against `_resolver/objects.yaml`
-          - If no match: try FUZZY SEARCH (see §3 below)
+          - If no match: try MULTI-SIGNAL SEARCH (see §3 below)
      b. SELECT block file
+        - Read block path from catalog entry
         - If multiple blocks match (multi-provider):
           - Rank by leveling (prefer higher P & M scores)
           - Use context_params to break ties (e.g., domain preference)
@@ -29,23 +30,25 @@ RESOLVE(path_id, context_params):
         - Validate inputs available from prior step outputs
         - Validate preconditions met
 
-  3. FUZZY SEARCH (when exact cap_id not in index)
-     a. BY VERB + OBJECT PATTERN:
-        - Parse cap_id → verb, object
-        - Search capability-index for entries matching verb or object
+  3. MULTI-SIGNAL SEARCH (when exact cap_id not in catalog)
+     Signal weights: trigger 0.30 + output_type 0.25 + input_chain 0.20 + domain 0.15 + semantic 0.10
+
+     a. BY TRIGGER WORDS (weight 0.30):
+        - Match user input against triggers[] in catalog entries
         - Return ranked candidates
-     b. BY OUTPUT TYPE:
+     b. BY OUTPUT TYPE (weight 0.25):
         - Query: "I need a capability that produces <output-type>"
-        - Scan capability-index entries with cap_contract: true
-        - Read frontmatter from each block file
-        - Match against outputs field in contract
+        - Scan catalog entries with output_types field
+        - Match against outputs
         - Return matching cap_ids
-     c. BY INPUT TYPE:
+     c. BY INPUT CHAIN (weight 0.20):
         - Query: "I have <input-type>, what capabilities can use it?"
-        - Same scan as output-type but matching inputs field
-     d. BY STAGE:
-        - Query: "What capabilities are in <stage>?"
-        - Filter capability-index by stage field
+        - Match against input_types in catalog entries
+     d. BY DOMAIN (weight 0.15):
+        - Filter catalog by domain field (e.g., domain: core)
+     e. BY SEMANTIC (weight 0.10):
+        - Parse cap_id → verb, object
+        - Search catalog for entries matching verb or object
 
   4. LOAD POLICIES
      a. template.applicable_policies.required → always inject
@@ -71,8 +74,8 @@ RESOLVE(path_id, context_params):
        run_id: "run-path-paper-15min-brief-arxiv-2506-20430-20260223-01",
        path_id: "path-paper-15min-brief",
        steps: [
-         { id: "intake", block: "discover/sub/intake.md", cap_id: "cap-intake-brief" },
-         { id: "skim", block: "discover/sub/literature-skim.md", cap_id: "cap-extract-literature-skim" },
+         { id: "intake", block: "_caps/core/intake.md", cap_id: "cap-intake-brief" },
+         { id: "brief", block: "_caps/core/brief.md", cap_id: "cap-extract-brief" },
          ...
        ],
        policies: [ "rule-quality-deliverable-minimum" ],
@@ -83,19 +86,19 @@ RESOLVE(path_id, context_params):
 
 ## Capability Matching Rules
 
-1. **Direct lookup**: `cap-intake-brief` → capability-index → `_stages/discover/sub/intake.md`
+1. **Direct lookup**: `cap-intake-brief` → capability-catalog → `_caps/core/intake.md`
 2. **Multi-provider**: If multiple blocks implement the same capability, use leveling to rank
 3. **Domain tools**: Some capabilities resolve to `_tools/<family>/<name>.md`
 4. **Composite**: A step.capabilities_needed may list multiple cap_ids — ALL must resolve
 5. **Contract validation**: If block has YAML frontmatter, validate input/output type compatibility
-6. **Fuzzy search**: When exact ID not found, search by verb, object, or output type
+6. **Multi-signal search**: When exact ID not found, search by trigger, output type, input chain, domain, or semantic match
 
-## Fuzzy Search Examples
+## Multi-Signal Search Examples
 
 ```
 # Find by output type
 SEARCH(output_type="evidence-bundle")
-→ cap-assemble-evidence-bundle (block: verify/sub/evidence-bundle.md)
+→ cap-assemble-evidence-bundle (block: _caps/core/evidence-bundle.md)
 
 # Find by verb
 SEARCH(verb="check")
@@ -105,9 +108,9 @@ SEARCH(verb="check")
 SEARCH(object="paper*")
 → cap-check-paper-structure, cap-build-paper-outline, cap-build-paper-draft, ...
 
-# Find by stage
-SEARCH(stage="discover")
-→ cap-intake-brief, cap-extract-brief, cap-map-context, ...
+# Find by domain
+SEARCH(domain="core")
+→ all 29 core capabilities
 ```
 
 ## Fallback Behavior
@@ -153,4 +156,4 @@ $PROJECT/runs/<run-id>/
 | `_resolver/verbs.yaml` | 18 canonical verbs + aliases |
 | `_resolver/objects.yaml` | 89 canonical objects + domains |
 | `_resolver/artifact-types.yaml` | 98 artifact type definitions |
-| `_resolver/capability-index.yaml` | cap-* → block file mapping (91 entries) |
+| `_resolver/capability-catalog.yaml` | cap-* → block file mapping (29 core entries) |

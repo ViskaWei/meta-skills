@@ -24,7 +24,7 @@ Layer B: Path Templates (配方库, ~40 templates)
 Layer A: Capabilities (能力积木, 63)
          cap-<verb>-<object>
          verb: verbs.yaml (18个); object: objects.yaml (56个)
-         存放: _stages/<stage>/sub/*.md + _tools/<family>/*.md
+         存放: _caps/core/*.md + _tools/<family>/*.md
 
 Cross-cutting: Policies (质检规则)
          rule-<scope>-<intent>
@@ -130,7 +130,7 @@ run-<path-id>-<context>-<yyyymmdd>-<seq>
 | Object Type | Layer | Naming | Placement |
 |---|---|---|---|
 | **入口技能** | **L0** | `<name>/SKILL.md` (YAML frontmatter: `name` + `description`) | `skills/<name>/` (顶层, Claude Code 自动发现) |
-| 原子能力 | A | `cap-<verb>-<object>` | `_stages/<stage>/sub/<action>.md` |
+| 原子能力 | A | `cap-<verb>-<object>` | `_caps/core/<action>.md` |
 | 域工具 | A | 无前缀 | `_tools/<family>/<name>.md` |
 | 路径模板 | B | `path-<domain>-<outcome>` | `_paths/<id>.yaml` |
 | 质检规则 | cross | `rule-<scope>-<intent>` | `_policies/<id>.yaml` |
