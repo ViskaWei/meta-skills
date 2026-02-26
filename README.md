@@ -24,14 +24,13 @@ User Input --> L0 Command --> L1 Path Template --> L2 Capabilities
 
 ### Layer 0: Entry Commands
 
-4 L0 entry commands, each with specialized routing:
+3 L0 entry commands, each with specialized routing:
 
 | Command | Purpose | Sub-commands |
 |---|---|---|
 | `/meta` | System self-maintenance | `health`, `cleanup`, `quality`, `gaps` |
 | `/build` | Create new skills | `-o skill` (L1 path / L2 cap / rule) |
 | `/research` | Research pipeline | `new`, `full`, `card` |
-| `/improve` | Improve artifacts | `loop` (default), `ratchet` |
 
 ### Layer 1: Path Templates
 
@@ -110,9 +109,8 @@ bash tools/setup.sh
 # 3. Use in any project
 /meta health              # Check framework health
 /meta gaps                # Find capability gaps
-/build -o skill cap ...   # Create new capabilities
+/meta create cap ...      # Create new capabilities
 /research new "topic"     # Start a research project
-/improve src/             # Improve existing code
 ```
 
 ## Growing Your Skill Tree
@@ -188,7 +186,6 @@ meta-skills/
     meta/                    # L0: System maintenance (auto-discovered)
     build/                   # L0: Create new skills (auto-discovered)
     research/                # L0: Research pipeline (auto-discovered)
-    improve/                 # L0: Improve artifacts (auto-discovered)
     _stages/                 # L2: 8 lifecycle stages (hidden)
       discover/sub/          #   7 capabilities
       decide/sub/            #   5 capabilities
@@ -218,7 +215,7 @@ meta-skills/
   LICENSE
 ```
 
-**Key rule**: Directories starting with `_` are hidden from Claude Code auto-discovery. 4 L0 commands (meta, build, research, improve) are auto-discovered as skills.
+**Key rule**: Directories starting with `_` are hidden from Claude Code auto-discovery. 3 L0 commands (meta, build, research) are auto-discovered as skills.
 
 ## Validation
 

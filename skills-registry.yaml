@@ -405,27 +405,22 @@ paths:
   - id: path-general-capability-gap
     file: "_paths/path-general-capability-gap.yaml"
     domain: general
-  - id: path-general-improve-loop
-    file: "_paths/path-general-improve-loop.yaml"
-    domain: general
   - id: path-research-new-experiment
     file: "_paths/path-research-new-experiment.yaml"
     domain: research
   - id: path-research-hypothesis-to-evidence
     file: "_paths/path-research-hypothesis-to-evidence.yaml"
     domain: research
-  - id: path-general-ratchet-loop
-    file: "_paths/path-general-ratchet-loop.yaml"
-    domain: general
+  # path-general-ratchet-loop and path-general-improve-loop moved to private overlay
 
 # === L0 Commands ===
 # User-facing task commands (operate on user artifacts, not the skill system)
 l0_commands:
   - id: build
-    triggers: [build, 做, create, scaffold, skill]
+    triggers: [build, 做, create, scaffold]
     skill_path: "skills/build/SKILL.md"
     candidate_paths: []
-    default_rules: [rule-quality-deliverable-minimum, rule-skill-build-gate]
+    default_rules: [rule-quality-deliverable-minimum]
   - id: research
     triggers: [research, 科研, experiment, hypothesis, rq]
     skill_path: "skills/research/SKILL.md"
@@ -433,20 +428,13 @@ l0_commands:
       - path-research-new-experiment
       - path-research-hypothesis-to-evidence
     default_rules: [rule-quality-deliverable-minimum, rule-research-front-loading, rule-completion-guard]
-  - id: improve
-    triggers: [improve, 完善, polish, enhance, refine]
-    skill_path: "skills/improve/SKILL.md"
-    candidate_paths:
-      - path-general-improve-loop
-      - path-general-ratchet-loop
-    default_rules: [rule-quality-deliverable-minimum, rule-improve-verify-result, rule-completion-guard]
 
 # === System Commands ===
 # Commands that operate on the skill system itself, not user artifacts.
 # Internal routing via SKILL.md table — NOT the smart-router.
 system_commands:
   - id: meta
-    triggers: [meta, harness, skill health, skill quality, skill cleanup, skill gaps]
+    triggers: [meta, harness, skill health, skill check, skill create, skill quality, skill cleanup, skill gaps, grow, catalog]
     internal_routing: true
     internal_paths:
       - path-general-skill-health

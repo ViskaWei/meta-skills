@@ -21,7 +21,7 @@ This repo implements an **8-stage lifecycle skill system** with a 3-layer invoca
 ### The 3 Layers
 
 ```
-L0  Entry Commands (4)       -> /meta, /build, /research, /improve
+L0  Entry Commands (3)       -> /meta, /build, /research
 L1  Path Templates (8)       -> Multi-step recipes (_paths/*.yaml)
 L2  Atomic Capabilities (29) -> Building blocks (_stages/<stage>/sub/*.md)
 Cross-cutting: Policies (9)  -> Quality gates (_policies/rule-*.yaml)
@@ -45,7 +45,7 @@ skills/
 skills-registry.yaml       <- Master registry
 ```
 
-**Key rule**: Directories starting with `_` are HIDDEN from Claude Code auto-discovery. 4 L0 commands (meta, build, research, improve) are auto-discovered.
+**Key rule**: Directories starting with `_` are HIDDEN from Claude Code auto-discovery. 3 L0 commands (meta, build, research) are auto-discovered.
 
 ---
 
@@ -165,7 +165,7 @@ bash tools/setup.sh    # Deploys to ~/.claude/skills/
 ```
 
 This copies:
-- 4 L0 commands (meta, build, research, improve) -> top-level (auto-discovered)
+- 3 L0 commands (meta, build, research) -> top-level (auto-discovered)
 - 8 lifecycle stages -> `_stages/` (hidden)
 - `_paths/`, `_policies/`, `_resolver/`, `_standards/` -> hidden directories
 - Symlinks `_tools/` and `skills-registry.yaml`
