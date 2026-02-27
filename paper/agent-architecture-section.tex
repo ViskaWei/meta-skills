@@ -1,139 +1,182 @@
-\documentclass[10pt,a4paper]{article}
-\usepackage[margin=2.2cm]{geometry}
-\usepackage{amsmath,amssymb}
-\usepackage{graphicx}
-\usepackage{booktabs}
-\usepackage{hyperref}
-\usepackage{xcolor}
-\usepackage{tikz}
-\usepackage{caption}
-\usepackage{float}
-\usepackage{microtype}
-\usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,backgrounds,calc}
+% agent-architecture-section.tex
+% Meta-Skills: A Skill Management System for LLM Agents
+% Include in main paper — no \documentclass or \begin{document}
+%
+% Required packages (ensure these are in the main preamble):
+%   amsmath, amssymb, booktabs, xcolor, tikz, caption, float, microtype
+%   \usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,backgrounds,calc}
 
-\hypersetup{colorlinks=true,linkcolor=blue!70!black,citecolor=blue!70!black,urlcolor=blue!60!black}
-
-% Stage colors
-\definecolor{discoverblue}{RGB}{41,128,185}
-\definecolor{decideorange}{RGB}{230,126,34}
-\definecolor{buildgreen}{RGB}{39,174,96}
-\definecolor{operategray}{RGB}{100,120,130}
-\definecolor{verifypurple}{RGB}{142,68,173}
-\definecolor{reviewteal}{RGB}{22,160,133}
-\definecolor{knowledgegold}{RGB}{200,130,18}
-\definecolor{policyred}{RGB}{192,57,43}
-\definecolor{deliverred}{RGB}{192,57,43}
+% Color definitions
 \definecolor{l0color}{RGB}{52,73,94}
 \definecolor{l1color}{RGB}{41,128,185}
 \definecolor{l2color}{RGB}{39,174,96}
-\definecolor{arrowgray}{RGB}{120,120,120}
-\definecolor{feedbackorange}{RGB}{211,84,0}
+\definecolor{policyred}{RGB}{192,57,43}
+\definecolor{guardpurple}{RGB}{142,68,173}
+\definecolor{observeteal}{RGB}{22,160,133}
 \definecolor{memoryblue}{RGB}{70,130,180}
-\definecolor{evolvegreen}{RGB}{46,139,87}
+\definecolor{arrowgray}{RGB}{120,120,120}
+\definecolor{phaseblue}{RGB}{41,128,185}
+\definecolor{domainother}{RGB}{120,120,140}
 
-\pagestyle{empty}
-
-\begin{document}
 
 %% ============================================================
-%% MAIN BODY — AGENT SKILL ARCHITECTURE (~1 page)
+%% MAIN BODY (~1.5 pages)
 %% ============================================================
 
-\section{Agent Skill Architecture}
+\section{Meta-Skills: A Skill Management System}
 \label{sec:agent-architecture}
 
-Complex scientific workflows demand agents that not only execute multi-step tasks but also learn from their own execution.
-A static collection of capabilities cannot anticipate every failure mode, adapt to new domains, or close quality gaps discovered only at runtime.
-We address this challenge with a meta-skills framework built on two pillars: a \emph{three-layer invocation hierarchy} that separates routing, orchestration, and atomic execution; and a \emph{closed-loop evolution mechanism} that transforms every task execution into a learning opportunity.
+Equipping LLM agents with specialized capabilities creates a scaling dilemma: a library of 200 skill definitions consumes ${\sim}$60{,}000 tokens---30\% of a 200K context window---before a single user message is processed.
+Tool selection accuracy degrades significantly once 30--50 tools are active simultaneously~\cite{anthropic-tst-2026,openai-agents-sdk}.
+We present \textbf{Meta-Skills}, a skill management system that organizes, discovers, and evolves agent capabilities through three interlocking mechanisms: a \emph{three-layer invocation hierarchy} for progressive disclosure, a \emph{typed contract chain} for automatic pipeline composition, and a \emph{closed-loop evolution mechanism} that transforms every execution into a learning opportunity.
+
+The current system manages 159~atomic capabilities across 12~domains, 25~path templates, and 32~quality policies---while keeping per-query token cost at ${\sim}$4{,}150 tokens ($-91\%$ vs.\ the 47{,}700-token all-load baseline).
 
 \paragraph{Three-layer invocation model.}
 The system organizes capabilities into three layers of increasing granularity (Figure~\ref{fig:three-layer}).
-\emph{Entry commands} (L0) are thin routers that accept natural-language requests---three commands (\texttt{/meta}, \texttt{/build}, \texttt{/research}) constitute the entire user-facing interface.
-\emph{Path templates} (L1) are declarative YAML recipes specifying step sequences, gate requirements, and branch conditions; eight templates cover workflows from skill health audits to hypothesis-driven research.
-\emph{Atomic capabilities} (L2) are 29 contract-driven building blocks with typed inputs and outputs, organized across an eight-stage lifecycle (Discover through Knowledge).
-Cross-cutting \emph{quality policies} inject verification rules automatically at gate transitions based on artifact types, decoupling what the agent can do, how it sequences actions, and when it enforces quality.
-A visibility boundary hides all internal layers behind \texttt{\_}-prefixed directories; users see only three commands.
+\emph{Entry commands} (L0) are 13 user-facing commands plus 12 plugins that accept natural-language requests.
+\emph{Path templates} (L1) are 25 declarative YAML recipes specifying multi-step workflows with gate requirements and branch conditions.
+\emph{Atomic capabilities} (L2) are 159 contract-driven building blocks with typed inputs and outputs, organized across 12 flat domains.
+Cross-cutting \emph{quality policies} (32 rules) inject verification automatically at gate transitions based on artifact types.
 
-\paragraph{Design principles.}
-Two ideas enable the system to grow without destabilizing.
-First, components are separated by \emph{change rate}: L0 commands are frozen, L2 capabilities evolve rapidly in hidden directories, and policies evolve slowly as failure modes are codified---additions to one layer require no coordinated changes to others.
-Second, constraints are enforced \emph{mechanically}: naming governance (18 controlled verbs, 91 canonical objects) is checked by validation scripts, and quality gates fire at every transition regardless of whether the agent ``remembers'' to invoke them.
+\paragraph{Token budget.}
+Inspired by Anthropic's Tool Search Tool ($-85\%$ token savings via \texttt{defer\_loading})~\cite{anthropic-tst-2026} and ToolGen's finding that flat indexing outperforms hierarchical (NDCG@1: 87.67 vs.\ 85.67)~\cite{toolgen-iclr-2025}, the system loads capability metadata progressively (Table~\ref{tab:token-budget}).
 
-\paragraph{Continuous self-evolution.}
-The architecture's central contribution is a closed loop that makes the system self-improving (Figure~\ref{fig:evolution-loop}).
-Every L0 command defaults to a dual-agent team: an \emph{executor} performs the user's task while an \emph{observer} (running on a cheaper model) monitors for improvement signals---policy violations, capability gaps, step deviations, repeated errors, quality misses, and automation candidates.
-Overhead remains low (${\sim}1.05\times$ for simple tasks, $1.3$--$1.5\times$ for complex ones) through a complexity tiering system that adjusts observer depth.
-Each finding maps to a concrete change: a new L2 capability, an L1 path adjustment, or a new \texttt{rule-*} policy.
+\begin{table}[ht]
+\centering\small
+\caption{Token budget by tier.  A typical query (T0+T1.5+T2) costs ${\sim}$4{,}150 tokens, a 91\% reduction from the 47{,}700-token all-load baseline ($159 \times 300$\,tok).}
+\label{tab:token-budget}
+\begin{tabular}{llrl}
+\toprule
+\textbf{Tier} & \textbf{Content} & \textbf{Tokens} & \textbf{When loaded} \\
+\midrule
+T0   & 13 L0 SKILL.md files        & 2{,}600  & Always (auto-discovered) \\
+T1   & Full capability catalog      & 5{,}565  & At routing time \\
+T1.5 & Domain-filtered catalog      & 350--875 & After L0 narrows domain \\
+T2   & Block files (2--3 per query) & 600--1{,}050 & On resolver selection \\
+\midrule
+\multicolumn{2}{l}{\textbf{Typical total (T0+T1.5+T2)}} & \textbf{$\sim$4{,}150} & \\
+\multicolumn{2}{l}{All-load baseline (159 $\times$ 300 tok)} & 47{,}700 & \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-Quality policies function as a \emph{one-way ratchet}: once a failure mode is identified, it is formalized into a policy enforced mechanically at every subsequent execution, preventing the same class of error from recurring.
-Cross-session continuity relies on a three-layer memory protocol---an auto-injected summary (L1), a structured handoff document (L2), and a permanent session archive (L3)---all updated before session termination.
-Observer reports feed into a recurring-patterns index that elevates repeated signals for systematic resolution, closing the loop from execution back to architecture.
-The eight-stage lifecycle further supports a hypothesis-driven research pipeline (\texttt{/research}) with three feedback loops---fail-to-fix, iterate, and pivot---and a persistent hypothesis tree that accumulates results across experiments.
+\paragraph{Three original design contributions.}
+The architecture introduces three design choices not previously combined in LLM agent skill frameworks (comparison with Anthropic TST, ToolGen, LangGraph, Semantic Kernel, MCP, AutoTool, and CrewAI in Appendix~\ref{app:design-principles}):
+\begin{itemize}\setlength\itemsep{2pt}
+\item \textbf{Lifecycle as metadata (P4)}: the 8-stage lifecycle (Discover$\to$Knowledge) is preserved as a \texttt{stage:} metadata field rather than a directory structure, enabling capabilities to participate in multiple lifecycle phases.
+\item \textbf{Multi-signal type-chain search (P6)}: a 5-signal weighted resolver (trigger~0.30, output\_type~0.25, input\_chain~0.20, domain~0.15, semantic~0.10) replaces single-signal search.
+\item \textbf{Typed contract chain (P8)}: 128 artifact types form a type system; the resolver validates $\textit{output\_types}(s_N) \cap \textit{input\_types}(s_{N+1}) \neq \varnothing$, enabling automatic pipeline composition.
+\end{itemize}
+
+\paragraph{Completion guard.}
+To prevent agents from prematurely terminating multi-step tasks---a persistent failure mode in autonomous LLM systems---the system implements a three-tier completion guard (Appendix~\ref{app:completion-guard}): (1)~a mechanical stop-hook that blocks exit when required evidence is missing, (2)~completion contracts in each SKILL.md declaring required outputs, and (3)~a cross-cutting policy injected into all path templates.
+
+\paragraph{Accompanied execution and self-evolution.}
+Every L0 command defaults to a dual-agent team: an \emph{executor} performs the task while a cheaper \emph{observer} model monitors for six signal types---policy violations, capability gaps, step deviations, repeated errors, quality misses, and automation candidates.
+Each finding maps to a concrete improvement: a new capability, path, or policy.
+Policies function as a \emph{one-way ratchet}: once a failure mode is identified, it is mechanically enforced at every subsequent execution, preventing regression deterministically (Appendix~\ref{app:accompanied-exec}).
+
+\paragraph{Research pipeline.}
+The system's most complex instantiation is the \texttt{/research} command, which provides 17 sub-commands, 5 research-specific path templates, and a 3-layer documentation hierarchy (Master Hub $\to$ Topic Hub $\to$ Experiment).
+It supports autonomous multi-hour research sessions through a hypothesis-driven agent loop.
+Section~\ref{sec:evaluation} evaluates this capability on a complex scientific computing task.
+
+\paragraph{Scope and limitations.}
+The core 29-capability infrastructure is open-sourced as a public submodule; domain-specific extensions (130 additional capabilities) are maintained in a private repository.
+We evaluate on a single complex task (Section~\ref{sec:evaluation}), which demonstrates depth of capability but does not establish breadth across diverse domains.
+The multi-signal resolver weights (P6) are hand-tuned; we leave systematic weight optimization and resolver accuracy evaluation to future work.
+The system is built on Claude Code's skill discovery mechanism; portability to other LLM platforms has not been tested.
 
 
 %% ============================================================
 %% APPENDIX
 %% ============================================================
+%% ============================================================
+%% APPENDIX CONTENT
+%% NOTE: The parent document must issue \appendix before \input-ing
+%% this portion.  For standalone testing, wrap in a test harness.
+%% ============================================================
 \clearpage
-\appendix
 
-\section{Agent Architecture Details}
+\section{Meta-Skills Architecture Details}
 \label{app:agent-architecture}
 
-This appendix provides detailed descriptions and figures for the agent skill architecture presented in Section~\ref{sec:agent-architecture}.
+This appendix provides detailed descriptions for the Meta-Skills system presented in Section~\ref{sec:agent-architecture}.
+
+
+%% ------------------------------------------------------------
+\subsection{System Overview and Key Numbers}
+\label{app:overview}
+
+Table~\ref{tab:key-numbers} summarizes the system's current scale.
+
+\begin{table}[ht]
+\centering\small
+\caption{Meta-Skills system at a glance.}
+\label{tab:key-numbers}
+\begin{tabular}{lr|lr}
+\toprule
+\textbf{Component} & \textbf{Count} & \textbf{Component} & \textbf{Count} \\
+\midrule
+L0 entry commands   & 13 + 12 plugins & Quality policies  & 32 \\
+L1 path templates   & 25              & Controlled verbs  & 18 \\
+L2 capabilities     & 159             & Governed objects  & 161 \\
+Capability domains  & 12              & Artifact types    & 128 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent The system's core architecture (FDPS --- Flat-Domain Progressive Skill) is informed by two academic results and an industry consensus: (1)~ToolGen~\cite{toolgen-iclr-2025} showed flat indexing outperforms hierarchical for LLM tool selection (NDCG@1: 87.67 vs.\ 85.67 on 47K tools); (2)~Anthropic TST~\cite{anthropic-tst-2026} demonstrated that progressive disclosure reduces token cost by 85\%; and (3)~all 7 surveyed production frameworks (TST, OpenAI Agents SDK, LangGraph, Semantic Kernel, MCP, CrewAI, AutoGen) organize tools by domain or role, not lifecycle stage.
 
 
 %% ------------------------------------------------------------
 \subsection{Three-Layer Invocation Model}
 \label{app:three-layer}
 
-The system organizes agent capabilities into three layers of increasing granularity (Figure~\ref{fig:three-layer}).
-At the top, \emph{entry commands} (Layer~0) serve as thin routers: three commands---\texttt{/meta}, \texttt{/build}, and \texttt{/research}---accept natural-language requests and match them to appropriate workflows.
-Below these, \emph{path templates} (Layer~1) are declarative YAML recipes that specify step sequences, gate requirements, and branch conditions for iterative loops.
-The core system defines eight such templates covering workflows from skill health audits to hypothesis-driven research.
-At the base, \emph{atomic capabilities} (Layer~2) comprise 29 contract-driven building blocks, each with typed inputs and outputs, organized across an eight-stage lifecycle: Discover, Decide, Build, Verify, Deliver, Operate, Review, and Knowledge.
-
-Cross-cutting quality policies operate independently of this hierarchy.
-Rather than relying on agent judgment to decide when quality checks should run, the system injects verification rules automatically at gate transitions based on the \emph{artifact types} each step produces.
-A step that emits an evidence bundle triggers reproducibility checks; a step that produces a gate verdict invokes minimum-quality thresholds.
-This artifact-driven design decouples \emph{what} the agent can do (capabilities), \emph{how} it sequences actions (path templates), and \emph{when} it enforces quality (policies), enabling each dimension to evolve independently.
-
-A visibility boundary separates the user-facing interface from internal complexity: users interact with three entry commands, while the 29 capabilities, 8 path templates, and 9 quality policies reside in directories prefixed with~\texttt{\_}, hidden from auto-discovery.
-
-
-%% ============================================================
-%% FIGURE 1: Three-Layer Architecture
-%% ============================================================
 \begin{figure}[ht]
 \centering
 \begin{tikzpicture}[
     >=Stealth,
     band/.style={rounded corners=5pt, draw=#1!60, fill=#1!6, line width=0.8pt,
-        minimum width=12.5cm, minimum height=1.5cm},
+        minimum width=13cm, minimum height=1.3cm},
     cmdbox/.style={rounded corners=3pt, draw=l0color!70, fill=l0color!15,
-        minimum height=0.55cm, font=\footnotesize\sffamily, inner sep=4pt},
+        minimum height=0.48cm, font=\scriptsize\sffamily, inner sep=3pt},
+    plugbox/.style={rounded corners=3pt, draw=l0color!40, fill=l0color!5,
+        minimum height=0.48cm, font=\scriptsize\sffamily, inner sep=2pt, text=l0color!60},
     pathbox/.style={rounded corners=3pt, draw=l1color!70, fill=l1color!12,
-        minimum height=0.55cm, font=\footnotesize\sffamily, inner sep=4pt},
-    stagebox/.style={rounded corners=2pt, draw=#1!70, fill=#1!20,
-        minimum width=1.2cm, minimum height=0.5cm, font=\scriptsize\sffamily,
-        align=center},
+        minimum height=0.48cm, font=\scriptsize\sffamily, inner sep=3pt},
+    dombox/.style={rounded corners=2pt, draw=#1!70, fill=#1!18,
+        minimum width=1.1cm, minimum height=0.42cm, font=\scriptsize\sffamily, align=center},
     layerlbl/.style={font=\footnotesize\bfseries\sffamily, text=#1},
     sublbl/.style={font=\scriptsize\sffamily, text=black!55},
-    arrw/.style={->, arrowgray, line width=0.7pt},
     vislbl/.style={font=\tiny\sffamily\itshape, text=black!40},
+    arrw/.style={->, arrowgray, line width=0.7pt},
 ]
 
-% === LAYER 0 (visible zone) ===
-\node[band=l0color] (l0) at (0, 0) {};
+% === LAYER 0 ===
+\node[band=l0color, minimum height=1.7cm] (l0) at (0, 0) {};
 \node[layerlbl=l0color, anchor=east] at ([xshift=-4pt]l0.west) {L0};
-\node[cmdbox] at (-2.5, 0) {/meta};
-\node[cmdbox] at (0, 0) {/build};
-\node[cmdbox] at (2.5, 0) {/research};
-\node[sublbl, anchor=west] at ([xshift=4pt]l0.east) {\textit{entry cmds}};
+% Task commands
+\node[cmdbox] at (-4.8, 0.3) {/read};
+\node[cmdbox] at (-3.5, 0.3) {/write};
+\node[cmdbox] at (-2.3, 0.3) {/build};
+\node[cmdbox] at (-0.9, 0.3) {/research};
+\node[cmdbox] at (0.5, 0.3) {/check};
+\node[cmdbox] at (1.6, 0.3) {/fix};
+\node[cmdbox] at (3.0, 0.3) {/improve};
+\node[cmdbox] at (4.6, 0.3) {/meta};
+% Plugins
+\node[plugbox] at (-3.0, -0.3) {pdf};
+\node[plugbox] at (-1.8, -0.3) {docx};
+\node[plugbox] at (-0.5, -0.3) {pptx};
+\node[plugbox] at (0.7, -0.3) {browser};
+\node[sublbl] at (2.2, -0.3) {\textit{+8 plugins}};
+\node[sublbl, anchor=west] at ([xshift=4pt]l0.east) {\textit{13+12}};
 
-% Visibility annotation (symmetric, anchored to band edges)
-\coordinate (visR) at ([xshift=2pt, yshift=-0.35cm]l0.south east);
-\coordinate (visL) at ([xshift=-2pt, yshift=-0.35cm]l0.south west);
+% Visibility boundary
+\coordinate (visR) at ([xshift=2pt, yshift=-0.32cm]l0.south east);
+\coordinate (visL) at ([xshift=-2pt, yshift=-0.32cm]l0.south west);
 \draw[black!20, dashed, line width=0.5pt] (visL) -- (visR);
 \node[vislbl, anchor=south east] at ([yshift=0.06cm]visR) {visible to user};
 \node[vislbl, anchor=north east] at ([yshift=-0.06cm]visR) {\texttt{\_}-prefixed (internal)};
@@ -141,182 +184,283 @@ A visibility boundary separates the user-facing interface from internal complexi
 % === LAYER 1 ===
 \node[band=l1color] (l1) at (0, -2.2) {};
 \node[layerlbl=l1color, anchor=east] at ([xshift=-4pt]l1.west) {L1};
-\node[pathbox] at (-3.5, -2.2) {skill-health};
-\node[pathbox] at (0, -2.2) {hypothesis-to-evidence};
-\node[pathbox] at (3.5, -2.2) {improve-loop};
-\node[sublbl, anchor=west] at ([xshift=4pt]l1.east) {\textit{path templates}};
+\node[pathbox] at (-4.0, -2.2) {hypothesis-to-evidence};
+\node[pathbox] at (-1.0, -2.2) {paper-improve};
+\node[pathbox] at (1.5, -2.2) {general-improve};
+\node[pathbox] at (3.8, -2.2) {\textit{+22 paths}};
+\node[sublbl, anchor=west] at ([xshift=4pt]l1.east) {\textit{25 paths}};
 
 % === LAYER 2 ===
-\node[band=l2color, minimum height=1.8cm] (l2) at (0, -4.8) {};
+\node[band=l2color, minimum height=1.6cm] (l2) at (0, -4.5) {};
 \node[layerlbl=l2color, anchor=east] at ([xshift=-4pt]l2.west) {L2};
-\node[stagebox=discoverblue]  at (-5.25, -4.55) {Discover};
-\node[stagebox=decideorange]  at (-3.75, -4.55) {Decide};
-\node[stagebox=buildgreen]    at (-2.25, -4.55) {Build};
-\node[stagebox=verifypurple]  at (-0.75, -4.55) {Verify};
-\node[stagebox=deliverred]    at (0.75, -4.55) {Deliver};
-\node[stagebox=operategray]   at (2.25, -4.55) {Operate};
-\node[stagebox=reviewteal]    at (3.75, -4.55) {Review};
-\node[stagebox=knowledgegold] at (5.25, -4.55) {Knowledge};
-\node[sublbl] at (0, -5.45) {29 contract-driven atomic capabilities with typed inputs / outputs};
-\node[sublbl, anchor=west] at ([xshift=4pt]l2.east) {\textit{capabilities}};
+% Top row
+\node[dombox=l2color] at (-4.8, -4.1) {core (55)};
+\node[dombox=l2color] at (-3.0, -4.1) {paper (25)};
+\node[dombox=l2color] at (-1.2, -4.1) {research (20)};
+\node[dombox=l2color] at (0.6, -4.1) {ml (11)};
+\node[dombox=l2color] at (2.2, -4.1) {web (9)};
+\node[dombox=l2color] at (3.8, -4.1) {present (7)};
+% Bottom row
+\node[dombox=domainother] at (-4.8, -4.85) {infra (7)};
+\node[dombox=domainother] at (-3.0, -4.85) {knowl. (6)};
+\node[dombox=domainother] at (-1.2, -4.85) {media (5)};
+\node[dombox=domainother] at (0.6, -4.85) {astro (5)};
+\node[dombox=domainother] at (2.2, -4.85) {skill (5)};
+\node[dombox=domainother] at (3.8, -4.85) {deliver (4)};
+\node[sublbl, anchor=west] at ([xshift=4pt]l2.east) {\textit{159 caps}};
 
-% === ARROWS L0 -> L1 ===
-\draw[arrw] (0, -0.75) -- (0, -1.45);
-\node[sublbl, anchor=west] at (0.12, -1.25) {\textit{keyword match}};
+% === ARROWS ===
+\draw[arrw] (0, -0.85) -- node[right, sublbl] {\textit{keyword match}} (0, -1.55);
+\draw[arrw] (0, -2.85) -- node[right, sublbl] {\textit{multi-signal search (P6)}} (0, -3.7);
 
-% === ARROWS L1 -> L2 ===
-\draw[arrw] (0, -2.95) -- (0, -3.9);
-\node[sublbl, anchor=west] at (0.12, -3.4) {\textit{resolve \& expand}};
-
-% === QUALITY POLICIES (bottom strip, symmetric via band anchors) ===
+% === POLICIES ===
 \draw[policyred, line width=1pt, dashed, rounded corners=4pt]
-    ([xshift=-2pt, yshift=-0.3cm]l2.south west) rectangle ([xshift=2pt, yshift=-0.8cm]l2.south east);
-\node[font=\scriptsize\bfseries\sffamily, text=policyred] at (0, -6.35)
-    {Quality Policies --- auto-inject at gate transitions based on artifact type};
+    ([xshift=-2pt, yshift=-0.25cm]l2.south west) rectangle ([xshift=2pt, yshift=-0.68cm]l2.south east);
+\node[font=\scriptsize\bfseries\sffamily, text=policyred] at (0, -5.78)
+    {33 Quality Policies --- auto-inject at gate transitions by artifact type};
 
 \end{tikzpicture}
-\caption{Three-layer skill invocation architecture.  Entry commands (L0) route user requests to path templates (L1), which expand into atomic capabilities (L2) organized by lifecycle stage.  A dashed visibility boundary separates the three user-facing commands from internal layers prefixed with~\texttt{\_}.  Quality policies inject automatically at gate transitions based on the artifact types produced.}
+\caption{Three-layer skill invocation architecture (FDPS~v4).  25~entry commands (L0) route user requests through 25~path templates (L1) to 159~capabilities in 12~flat domains (L2).  Quality policies inject automatically based on artifact types.}
 \label{fig:three-layer}
 \end{figure}
+
+\paragraph{Layer~0: Entry commands.}
+The system exposes 13 visible commands: 9~task commands (\texttt{/read}, \texttt{/write}, \texttt{/search}, \texttt{/build}, \texttt{/research}, \texttt{/check}, \texttt{/fix}, \texttt{/improve}, \texttt{/capture}), 1~system command (\texttt{/meta}), 2~special commands (\texttt{/workflow}, \texttt{/office}), and 1~schedule command---plus 12~plugin commands.
+Each L0 is a thin router: it matches user input via keywords, constrains the domain search space, and delegates to L1 or L2.
+
+\paragraph{Layer~1: Path templates.}
+The 25~templates encode expert workflows as YAML recipes spanning six domains: research~(5), paper~(5), general~(6), webui~(3), standards~(3), and docs~(3).
+Each specifies capability sequences, gate conditions, branch rules, and policy injection points.
+
+\paragraph{Layer~2: Atomic capabilities.}
+The 159~capabilities are organized into 12~flat domains (Table~\ref{tab:domains}).
+Each declares typed inputs and outputs from 128~artifact types, enabling the resolver to verify pipeline compatibility.
+Names follow a strict \texttt{cap-<verb>-<object>} convention (18~controlled verbs, 161~governed objects) enforced by validation scripts.
+
+\begin{table}[ht]
+\centering\small
+\caption{Capability domains.  Domain organization follows an industry pattern: all 7 surveyed frameworks organize tools by domain or role rather than lifecycle stage.}
+\label{tab:domains}
+\begin{tabular}{lrl|lrl}
+\toprule
+\textbf{Domain} & \textbf{Caps} & \textbf{Scope} & \textbf{Domain} & \textbf{Caps} & \textbf{Scope} \\
+\midrule
+core       & 55 & Cross-domain fundamentals & media      &  5 & Image, schematic \\
+paper      & 25 & Academic writing          & astro      &  5 & Domain-specific   \\
+research   & 20 & Hypothesis, experiment    & skill      &  5 & Skill system tools \\
+ml         & 11 & ML pipeline               & knowledge  &  6 & Capture, indexing  \\
+web        &  9 & Dashboard, explorer       & deliver    &  4 & Package, release   \\
+infra      &  7 & GPU setup, observability   & present    &  7 & Slides, poster     \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Scaling prediction.}
+Because domain filtering reduces the catalog search space from $N$ to ${\sim}20$ regardless of total capability count, FDPS token cost grows sub-linearly: at 500~capabilities, predicted cost is ${\sim}5{,}650$ tokens ($-96\%$ vs.\ all-load); at 1{,}000, ${\sim}7{,}400$ tokens ($-98\%$).
 
 
 %% ------------------------------------------------------------
 \subsection{Design Principles}
 \label{app:design-principles}
 
-Two foundational ideas shape the architecture and enable the system to grow without destabilizing.
+The architecture is grounded in 10~design principles synthesized from 7~frameworks (production systems and research prototypes) and 5~academic papers.
+Table~\ref{tab:principles} summarizes all~10; we detail the three novel combinations ($\star$) below.
 
-\paragraph{Separate components that change at different rates.}
-Entry commands (L0) are frozen and rarely modified.
-Atomic capabilities (L2) evolve rapidly as the system encounters new task types, and reside in hidden directories where changes cannot disrupt the user interface.
-Quality policies sit between these extremes, evolving slowly as new failure modes are codified.
-This \emph{stability gradient}---frozen foundation, growing middle layer, slowly-evolving guardrails---mirrors the inner/outer loop pattern from DevOps and the fixed-foundation / dynamic-capabilities / safety-guardrails structure observed in self-evolving agent architectures.
-Because each layer changes at its own rate, additions to one layer do not require coordinated changes to the others.
+\begin{table}[ht]
+\centering\small
+\caption{Ten design principles.  $\star$ = novel combination for LLM agent skill management, drawing on established techniques from information retrieval and dataflow systems.}
+\label{tab:principles}
+\begin{tabular}{clll}
+\toprule
+& \textbf{Principle} & \textbf{Primary Source} & \textbf{Implementation} \\
+\midrule
+P1 & Progressive Disclosure   & Anthropic TST ($-85\%$)           & T0/T1/T1.5/T2 tiers \\
+P2 & Flat over Hierarchical   & ToolGen (ICLR 2025)               & Flat \texttt{cap-*} index \\
+P3 & Domain-Based Org.        & 7/7 framework survey              & 12 flat domains \\
+$\star$P4 & Lifecycle as Metadata & \textit{Original}              & \texttt{stage:} field in catalog \\
+P5 & Single Source of Truth   & DRY principle                      & Unified catalog YAML \\
+$\star$P6 & Multi-Signal Search   & \textit{Original}              & 5-signal weighted resolver \\
+P7 & Soft Ceiling + Delegation & OpenAI $\leq$20, TST $\leq$50   & 13 L0 $\times$ $\sim$15 caps \\
+$\star$P8 & Typed Contract Chain  & \textit{Original}              & 128 artifact types \\
+P9 & Path Templates           & AutoTool inertia                   & 25 declarative YAML \\
+P10 & Governed Extensibility  & MCP + 26.1\% vuln rate            & 18 verbs, 161 objects \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-\paragraph{Enforce mechanically, not by documentation.}
-The system treats the execution environment as a \emph{harness} rather than a set of guidelines that agents may or may not follow.
-Naming governance (18 controlled verbs, 91 canonical objects) is enforced by validation scripts, not by style guides.
-Structural checks catch malformed capabilities before deployment.
-Cross-cutting policies inject quality gates at every gate transition automatically.
-This design makes violations structurally impossible rather than merely discouraged: a naming error triggers a linter failure, and a missing quality check fires regardless of whether the agent ``remembers'' to run it.
+\paragraph{P4: Lifecycle as metadata.}
+The Phase~2 architecture organized capabilities by lifecycle stage, requiring the LLM to first determine which stage it was in.
+No existing framework uses lifecycle stage as a primary organization axis; all use domain or role.
+FDPS preserves the lifecycle's orchestration value (step ordering, gate transitions, quality-gate injection) as a \texttt{stage:} metadata field, while organizing capabilities by domain.
+
+\paragraph{P6: Multi-signal type-chain search.}
+Existing discovery mechanisms use at most two signals: TST uses regex or BM25; LangGraph uses embedding similarity; Semantic Kernel uses contextual RAG.
+Our resolver fuses five weighted signals:
+
+\begin{center}\small
+\begin{tabular}{lrl}
+\toprule
+\textbf{Signal} & \textbf{Weight} & \textbf{Provenance} \\
+\midrule
+Trigger-word match  & 0.30 & TST regex \\
+Output-type match   & 0.25 & FDPS original \\
+Input-chain compat. & 0.20 & FDPS original \\
+Domain match        & 0.15 & Industry consensus \\
+Semantic similarity & 0.10 & LangGraph BigTool \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent The input-chain signal---``which capabilities accept the artifact types the previous step produced?''---enables automatic pipeline step discovery and is unique to FDPS.
+
+\paragraph{P8: Typed contract chain.}
+Each capability declares \texttt{input\_types} and \texttt{output\_types} from a vocabulary of 128~artifact types.
+The resolver validates $\textit{output\_types}(s_N) \cap \textit{input\_types}(s_{N+1}) \neq \varnothing$ before assembling multi-step pipelines.
+No surveyed framework implements inter-tool type contracts: TST, BigTool, and MCP treat tools as independent entities.
+
+\paragraph{Feature comparison.}
+Table~\ref{tab:comparison} compares FDPS with seven production frameworks.
+
+\begin{table}[ht]
+\centering\small
+\caption{Feature comparison. $\bullet$ = full, $\circ$ = partial, -- = absent.}
+\label{tab:comparison}
+\begin{tabular}{l*{8}{c}}
+\toprule
+\textbf{Feature} & \rotatebox{65}{\textbf{TST}} & \rotatebox{65}{\textbf{ToolGen}} & \rotatebox{65}{\textbf{BigTool}} & \rotatebox{65}{\textbf{Sem.~K.}} & \rotatebox{65}{\textbf{MCP}} & \rotatebox{65}{\textbf{AutoTool}} & \rotatebox{65}{\textbf{CrewAI}} & \rotatebox{65}{\textbf{FDPS}} \\
+\midrule
+Progressive disclosure    & $\bullet$ & --        & $\circ$ & $\circ$ & --      & --        & --      & $\bullet$ \\
+Flat indexing             & $\bullet$ & $\bullet$ & $\bullet$ & $\circ$ & $\circ$ & --      & --      & $\bullet$ \\
+Multi-signal search       & $\circ$   & --        & $\circ$ & $\circ$ & --      & --        & --      & $\bullet$ \\
+Typed contract chain$^\star$ & --     & --        & --      & --      & --      & --        & --      & $\bullet$ \\
+Path templates            & --        & --        & --      & --      & --      & $\circ$   & --      & $\bullet$ \\
+Governed extensibility    & --        & --        & --      & $\circ$ & $\circ$ & --        & --      & $\bullet$ \\
+Lifecycle as metadata$^\star$ & --    & --        & --      & --      & --      & --        & --      & $\bullet$ \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 
 %% ------------------------------------------------------------
-\subsection{Continuous Self-Evolution}
-\label{app:self-evolution}
+\subsection{Completion Guard}
+\label{app:completion-guard}
 
-The architecture's central contribution is the closed loop that makes the system \emph{self-improving}: every skill execution feeds observations back into the system's own capabilities, policies, and knowledge (Figure~\ref{fig:evolution-loop}).
-Four mechanisms form this loop.
+A persistent failure mode in LLM agents is premature task termination: the agent produces partial results and declares completion without verification or delivery.
+The completion guard addresses this through a three-tier enforcement architecture introduced in Phase~4.
 
-\paragraph{Accompanied execution.}
-Every L0 command defaults to a dual-agent team: an \emph{executor} that performs the user's task, and an \emph{observer} that monitors for improvement opportunities.
-The observer runs on a smaller, cheaper model (Haiku) and employs signal-based monitoring rather than full-trace analysis.
-This keeps overhead low: approximately $1.05\times$ for simple tasks (read, search, check) and $1.3$--$1.5\times$ for complex ones (write, build, research).
-A complexity tiering system classifies commands into \emph{light} and \emph{full} tiers, with observers adapting their depth accordingly---light-tier observers perform a single post-hoc analysis, while full-tier observers monitor three checkpoints aligned with lifecycle gate transitions.
+\paragraph{Tier~1: Mechanical enforcement (stop-hook).}
+A shell hook intercepts every session termination attempt and checks a state file tracking completed steps, remaining steps, and required evidence items.
+The hook's decision chain:
+\begin{enumerate}\setlength\itemsep{1pt}
+\item No state file $\to$ allow exit.
+\item Iteration $\geq$ max\_iterations $\to$ allow (prevent infinite loops).
+\item Transcript contains \texttt{<promise>ALL\_STEPS\_COMPLETE</promise>} $\to$ allow.
+\item All steps completed AND all required evidence found $\to$ allow.
+\item Otherwise $\to$ \textbf{block exit}, inject system message listing missing items.
+\end{enumerate}
 
-The observer watches for six high-value signal types: policy violations, capability gaps, step deviations, repeated errors, quality misses, and automation candidates.
-Each finding maps to a concrete change: a new L2 capability, an L1 path adjustment, or a new quality policy.
-Graceful degradation ensures that observer failures never block the user's task.
+\paragraph{Tier~2: Completion contracts.}
+Each of the 12~L0 SKILL.md files declares a completion contract specifying required output artifacts.
+For example, \texttt{/improve} requires a gate-verdict, improvement-log, and improvement-review with $\geq$4.0/6.0 quality score; \texttt{/research} requires an evidence-bundle and hypothesis-verdict.
+Contracts include PAUSE-recovery rules: when execution resumes after user confirmation, the agent must re-check the evidence checklist and continue from the next incomplete item.
+
+\paragraph{Tier~3: Policy injection.}
+The policy \texttt{rule-completion-guard} is injected into all 25~path templates.
+Each template's \texttt{completion\_guard:} section maps specific evidence items to the workflow (e.g., research paths require \texttt{[evidence-bundle, gate-verdict, knowledge-card]}).
+
+
+%% ------------------------------------------------------------
+\subsection{Accompanied Execution and Self-Evolution}
+\label{app:accompanied-exec}
+
+Accompanied execution is a cross-cutting execution mode enabled by default for all L0 commands (opt-out: \texttt{--solo} or \texttt{--depth fast}).
+Table~\ref{tab:ae-evolution} summarizes the v1$\to$v2 evolution.
+
+\begin{table}[ht]
+\centering\small
+\caption{Accompanied execution evolution (Phase~4 v1 $\to$ Phase~5 v2).}
+\label{tab:ae-evolution}
+\begin{tabular}{lll}
+\toprule
+\textbf{Dimension} & \textbf{v1 (Phase~4)} & \textbf{v2 (Phase~5)} \\
+\midrule
+Observation       & 4-dimension full coverage       & 6 high-value signal types \\
+Observer model    & Same as executor                 & Haiku ($-70\%$ cost) \\
+Cost overhead     & $\sim$2$\times$                  & 1.05--1.5$\times$ (tiered) \\
+Complexity tiers  & None                             & Light vs.\ Full \\
+Failure handling  & None                             & Graceful degradation \\
+Escalation        & None                             & Critical $\to$ leader alert \\
+Trend tracking    & Ad-hoc                           & \texttt{PATTERNS.md} index \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Six signal types.}
+The observer monitors for: (1)~policy violations, (2)~capability gaps, (3)~step deviations, (4)~repeated errors ($\geq$2 occurrences), (5)~quality misses, and (6)~automation candidates (manual patterns that could become new path templates).
+Each finding maps to a concrete change: a new L2 capability, an L1 path adjustment, or a new \texttt{rule-*} policy.
 
 \paragraph{Policy ratchet.}
-Quality policies function as a one-way ratchet.
-Once accompanied execution identifies a failure mode, it is formalized into a new \texttt{rule-*} policy and enforced mechanically at every subsequent execution.
-Because policies trigger based on artifact types rather than agent memory, they prevent regression deterministically---the same class of error cannot recur once the corresponding policy is in place.
-Over time, the set of enforced policies grows monotonically, progressively closing quality gaps.
+Once a failure mode is identified, it is formalized into a policy and enforced mechanically at every subsequent execution.
+Because policies trigger on artifact types rather than agent memory, they prevent regression deterministically.
+Over the system's lifetime, the policy set grew monotonically from 0 to 32, each addition driven by an observed failure rather than speculative design.
 
 \paragraph{Three-layer memory.}
-Cross-session continuity relies on a write-on-end protocol with three persistence layers.
-Layer~1 is an auto-injected compact summary (\texttt{MEMORY.md}) that every new session receives mechanically, requiring no voluntary action.
-Layer~2 is a structured handoff document (\texttt{HANDOFF.md}) read at session start, containing active TODOs, blockers, and recently modified files.
-Layer~3 is a permanent session archive with timestamped records available for historical lookup.
-All three layers must be updated before any session terminates; omitting any one constitutes a memory discontinuity.
-Automated pruning retains the 30 most recent sessions to prevent unbounded growth.
+Cross-session continuity uses a write-on-end protocol: Layer~1 (\texttt{MEMORY.md}, auto-injected); Layer~2 (\texttt{HANDOFF.md}, read at session start); Layer~3 (permanent session archive).
+All three must be updated before session termination.
 
-\paragraph{Knowledge capture and pattern accumulation.}
-The Review stage of the lifecycle extracts reusable principles from retrospectives and archives them as knowledge cards.
-Observer reports feed into a recurring-patterns index (\texttt{PATTERNS.md}) that tracks signal types, frequencies, and resolution status across sessions.
-When the same signal type recurs---for example, repeated step deviations in a particular path template---the index elevates it for systematic resolution rather than one-off repair.
-This trend-detection mechanism transforms individual observations into structural improvements, closing the loop from execution back to architecture.
-
-
-%% ============================================================
-%% FIGURE 2: Continuous Self-Evolution Loop
-%% ============================================================
 \begin{figure}[ht]
 \centering
 \begin{tikzpicture}[
     >=Stealth,
-    % --- Loop node styles (2 colors: action vs analysis) ---
-    actnode/.style={  % Left column: Execute + Evolve (action/doing)
-        rounded corners=4pt, draw=discoverblue!60, fill=discoverblue!7,
-        minimum width=2.6cm, minimum height=0.85cm,
+    actnode/.style={rounded corners=4pt, draw=phaseblue!60, fill=phaseblue!7,
+        minimum width=2.4cm, minimum height=0.7cm,
         font=\small\sffamily, align=center, line width=0.9pt},
-    monnode/.style={  % Right column: Observe + Review (monitoring/evaluating)
-        rounded corners=4pt, draw=reviewteal!60, fill=reviewteal!7,
-        minimum width=2.6cm, minimum height=0.85cm,
+    monnode/.style={rounded corners=4pt, draw=observeteal!60, fill=observeteal!7,
+        minimum width=2.4cm, minimum height=0.7cm,
         font=\small\sffamily, align=center, line width=0.9pt},
-    % --- Mechanism box style (parametric color) ---
-    mechbox/.style={
-        rounded corners=3pt, draw=#1!50, fill=#1!6,
-        minimum height=0.55cm, inner sep=5pt,
+    mechbox/.style={rounded corners=3pt, draw=#1!50, fill=#1!6,
+        minimum height=0.5cm, inner sep=5pt,
         font=\footnotesize\sffamily, align=center, line width=0.6pt},
-    % --- Annotation ---
     annot/.style={font=\scriptsize\sffamily, text=black!50},
-    % --- Edge styles ---
     primary/.style={->, black!70, line width=1.0pt, shorten >=1pt, shorten <=1pt},
-    feedbackedge/.style={->, black!35, line width=0.7pt, dotted,
-        shorten >=1pt, shorten <=1pt},
+    feedbackedge/.style={->, black!35, line width=0.7pt, dotted, shorten >=1pt, shorten <=1pt},
     crossedge/.style={->, black!25, line width=0.5pt, dashed},
 ]
 
-% === MAIN LOOP (4 nodes, clockwise rectangle) ===
-% Left column (blue) = action; Right column (teal) = analysis
 \node[actnode] (exec) {Execute};
-\node[monnode, right=2.8cm of exec] (observe) {Observe};
-\node[monnode, below=1.8cm of observe] (review) {Review};
-\node[actnode, below=1.8cm of exec] (evolve) {Evolve};
+\node[monnode, right=2.5cm of exec] (observe) {Observe};
+\node[monnode, below=1.5cm of observe] (review) {Review};
+\node[actnode, below=1.5cm of exec] (evolve) {Evolve};
 
-% Subtle background grouping
 \begin{scope}[on background layer]
     \node[fit=(exec)(observe)(review)(evolve),
-        rounded corners=8pt, fill=black!2, draw=black!8, line width=0.3pt,
-        inner sep=15pt] {};
+        rounded corners=8pt, fill=black!2, draw=black!8, line width=0.3pt, inner sep=14pt] {};
 \end{scope}
 
-% Clockwise primary arrows
-\draw[primary] (exec) -- node[above, annot] {6 signal types} (observe);
+\draw[primary] (exec) -- node[above, annot] {6 signals} (observe);
 \draw[primary] (observe) -- (review);
 \draw[primary] (review) -- node[below, annot] {approve} (evolve);
+\draw[feedbackedge] (evolve.west) -- ++(-0.8, 0) |- (exec.west);
 
-% Feedback: Evolve -> Execute (left channel, outside the rectangle)
-\draw[feedbackedge] (evolve.west) -- ++(-0.9, 0) |- (exec.west);
+\node[annot, above=0.2cm of exec] {executor (Sonnet)};
+\node[annot, above=0.2cm of observe] {observer (Haiku)};
+\node[annot] at ($(evolve.south east)!0.5!(review.south west) + (0, -0.2)$)
+    {$\to$ new cap / path / policy};
 
-% Dual-agent annotations
-\node[annot, above=0.3cm of exec] {executor (Sonnet)};
-\node[annot, above=0.3cm of observe] {observer (Haiku)};
+\node[mechbox=policyred] (pol) at ($(evolve.south) + (0, -1.6)$) {Policy Ratchet};
+\node[mechbox=memoryblue] (mem) at ($(review.south) + (0, -1.6)$) {3-Layer Memory};
+\node[mechbox=guardpurple] (guard) at ($(pol)!0.5!(mem) + (0, -0.9)$) {Completion Guard};
 
-% Evolve output annotation (centered below the loop)
-\node[annot] at ($(evolve.south east)!0.5!(review.south west) + (0, -0.3)$)
-    {$\rightarrow$ new L2 cap ~/~ L1 path ~/~ rule-*};
+\node[annot, anchor=north] at ([yshift=-0.05cm]pol.south) {failure $\to$ rule $\to$ enforce};
+\node[annot, anchor=north] at ([yshift=-0.05cm]mem.south) {L1 auto $\cdot$ L2 handoff $\cdot$ L3 archive};
 
-% === SUPPORTING MECHANISMS (aligned below loop) ===
-\node[mechbox=policyred] (pol) at ($(evolve.south) + (0, -2.2)$)
-    {Policy Ratchet};
-\node[mechbox=memoryblue] (mem) at ($(review.south) + (0, -2.2)$)
-    {Three-Layer Memory};
-
-% Mechanism sub-labels
-\node[annot, anchor=north] at ([yshift=-0.08cm]pol.south)
-    {failure $\rightarrow$ rule $\rightarrow$ enforce};
-\node[annot, anchor=north] at ([yshift=-0.08cm]mem.south)
-    {L1 auto $\cdot$ L2 handoff $\cdot$ L3 archive};
-
-% Cross-links from loop to mechanisms
 \draw[crossedge] (evolve) -- (pol);
 \draw[crossedge] (review) -- (mem);
+\draw[crossedge] (pol) -- (guard);
+\draw[crossedge] (mem) -- (guard);
 
 \end{tikzpicture}
-\caption{Continuous self-evolution loop.  Every skill execution spawns a dual-agent team: an executor performs the task while an observer detects improvement signals.  Findings are reviewed and, once approved, fed back as new capabilities, paths, or policies.  A policy ratchet mechanically enforces every codified failure mode; a three-layer memory stack ensures cross-session continuity.}
+\caption{Self-evolution loop.  Every command spawns executor + observer.  The observer detects improvement signals; findings feed into new capabilities, paths, or policies via a one-way policy ratchet.  A 3-layer memory ensures cross-session continuity; the completion guard prevents premature termination.}
 \label{fig:evolution-loop}
 \end{figure}
 
@@ -325,11 +469,49 @@ This trend-detection mechanism transforms individual observations into structura
 \subsection{Research Pipeline Integration}
 \label{app:research-pipeline}
 
-The eight-stage lifecycle supports a hypothesis-driven research pipeline instantiated through the \texttt{/research} command.
-The pipeline transforms a research question into validated evidence through three explicit feedback loops.
-Quality-gate failure returns to Build for implementation fixes.
-A ``continue'' decision loops to Decide for the next iteration.
-A ``change direction'' signal retreats to Discover for strategic reformulation.
-Four properties underpin its effectiveness: the pipeline is \emph{hypothesis-driven} (every experiment targets a falsifiable claim), \emph{MVP-recursive} (each iteration tests one hypothesis with pre-defined acceptance thresholds), \emph{fail-fast} (consecutive failures escalate from fixes to strategic pivots), and \emph{knowledge-accumulating} (results from every experiment---including negative ones---feed into a persistent hypothesis tree).
+The \texttt{/research} command instantiates the architecture for hypothesis-driven scientific workflows.
 
-\end{document}
+\paragraph{17 sub-commands} span the research lifecycle:
+\emph{Planning} (\texttt{status}, \texttt{next}, \texttt{lookup});
+\emph{Initialization} (\texttt{start}, \texttt{new}, \texttt{init}, \texttt{grow});
+\emph{Execution} (\texttt{rq}, \texttt{update}, \texttt{archive}, \texttt{prompt}, \texttt{merge});
+\emph{Knowledge} (\texttt{card}, \texttt{design}, \texttt{session});
+\emph{Delivery} (\texttt{slides}, \texttt{broadcast}).
+
+\paragraph{5 path templates} encode increasingly comprehensive workflows:
+\texttt{new-experiment} (6~steps),
+\texttt{knowledge-card} (5~steps),
+\texttt{hub-synthesis} (5~steps),
+\texttt{ablation-study} (9~steps),
+and \texttt{hypothesis-to-evidence} (26~steps with 4~decision branches).
+
+\paragraph{3-layer documentation hierarchy.}
+A \emph{Master Hub} provides cross-topic overview with consensus tables.
+\emph{Topic Hubs} track problem trees and authoritative numbers for each research question.
+\emph{Experiment Reports} document individual runs with front-loaded conclusions and reproducibility commands.
+Key findings flow upward: experiment updates synchronize into parent Topic Hub consensus tables.
+
+\paragraph{Autonomous agent loop (\texttt{rq}).}
+The \texttt{rq} sub-command launches a fully autonomous research agent that iterates multiple MVP cycles.
+The loop implements three feedback channels: \emph{fail-to-fix}, \emph{iterate}, and \emph{pivot}.
+Five guardrails were added through eval-driven improvement:
+(1)~anti-fabrication (verify claims against actual outputs),
+(2)~implementation drift prevention (re-check running code after modifications),
+(3)~FINALIZE front-loading (pre-load completion requirements),
+(4)~algorithm verification (verify critical implementations against specs),
+(5)~MVP-0 sanity gate (establish working baseline first).
+
+\paragraph{Research-specific policies.}
+\texttt{rule-research-front-loading} requires the first 30~lines of every experiment report to contain the core conclusion and reproduction recipe.
+\texttt{rule-research-eval-protocol} freezes evaluation metrics within a topic.
+\texttt{rule-research-reproducibility} mandates seed, environment, and data-version recording.
+
+
+%% ============================================================
+%% BIBLIOGRAPHY ENTRIES
+%% Move these to the parent document's .bib file or thebibliography.
+%% Required keys: anthropic-tst-2026, toolgen-iclr-2025, openai-agents-sdk,
+%%   autotool-2025, agent-skills-wild-2026, agntcy-ads-2025,
+%%   registry-evolution-2025, piano, paperbench, scienceagentbench,
+%%   mlrbench, masft
+%% ============================================================

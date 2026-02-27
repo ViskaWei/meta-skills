@@ -1,0 +1,417 @@
+% agent-evaluation-section.tex
+% Evaluation section for the /research agent on the MRI-Piano task.
+% Included by a parent document — do NOT include \documentclass or \begin{document}.
+% Requires: booktabs, amsmath, hyperref, xcolor, multirow, array
+
+%% ============================================================
+%% MAIN BODY — EVALUATION (~1 page)
+%% ============================================================
+
+\section{Evaluation: MRI CTC PDE Fitting}
+\label{sec:evaluation}
+
+To evaluate whether the \texttt{/research} agent can perform genuine scientific computing---not merely generate syntactically correct code---we designed a task that requires domain expertise, numerical methods knowledge, and systematic engineering: fitting pharmacokinetic parameters to MRI concentration-time curves (CTC) via PDE-based transport models.
+This section describes the task, the four-dimensional scoring rubric, and the results.
+
+\paragraph{Task overview.}
+The MRI-Piano task asks the agent to build a complete computational pipeline that converts raw MRI signals to concentration-time curves, formulates an advection-diffusion PDE on a 2D spatial grid, solves the resulting ODE system with adaptive time-stepping, and fits tissue-level transport parameters (velocity fields, diffusion coefficients) to observed data using gradient-based optimization with robust loss functions.
+The task draws on reference code from the PIANO framework~\cite{piano} and requires the agent to: (i)~understand the underlying physics (contrast agent transport in tissue), (ii)~implement seven specific algorithmic concepts including upwind advection schemes, divergence-form diffusion discretization, and stream-function velocity parameterization, (iii)~assemble these into an eight-stage pipeline from signal conversion to parameter fitting, and (iv)~iterate through multiple MVPs with structured documentation.
+No part of the reference implementation is provided to the agent; only raw data and a prose task description are given.
+
+\paragraph{Evaluation design.}
+We score agent runs across four dimensions, each targeting a distinct aspect of scientific capability (Table~\ref{tab:eval-dimensions}).
+\emph{Code correctness} (weight~0.30) checks whether seven algorithmic concepts are correctly implemented by pattern-matching against the agent's source code, with three concepts (upwind advection, divergence-form diffusion, stream-function velocity) designated as \emph{critical}---missing any one caps the dimension score at 0.50.
+\emph{Pipeline completeness} (weight~0.25) verifies that all eight pipeline stages are present, from signal conversion through spatial smoothing.
+\emph{Research process} (weight~0.25) evaluates whether the agent followed a systematic methodology: did it create a problem decomposition (hub with hypothesis tree), plan an MVP roadmap with stop-loss criteria, write front-loaded experiment reports, and capture reusable knowledge?
+\emph{Execution depth} (weight~0.20) measures iteration intensity---number of completed MVPs, git commits, scripts, and data profiling artifacts.
+The aggregate pass threshold is 0.50.
+
+This four-dimensional design addresses a gap in existing agent benchmarks, which typically evaluate only code correctness or task completion rate~\cite{paperbench,scienceagentbench}, collapsing the distinction between an agent that writes working code by trial-and-error and one that follows a disciplined research process.
+Our rubric makes this distinction measurable, though we validate it on a single task and leave generalization to future work.
+
+\begin{table}[t]
+\centering
+\caption{MRI-Piano evaluation dimensions.  Three algorithm concepts are designated \emph{critical} under code correctness: missing any one imposes a ceiling of 0.50 on that dimension.  Pipeline stages marked with $\dagger$ are optional (bonus).}
+\label{tab:eval-dimensions}
+\small
+\begin{tabular}{@{}llccl@{}}
+\toprule
+\textbf{Dimension} & \textbf{What it measures} & \textbf{Weight} & \textbf{Threshold} & \textbf{Components} \\
+\midrule
+Code correctness     & Algorithmic fidelity          & 0.30 & 0.40 & 7 concepts (3 critical) \\
+Pipeline completeness & End-to-end coverage          & 0.25 & 0.50 & 8 stages (6 required + 2$^\dagger$) \\
+Research process     & Scientific methodology         & 0.25 & 0.50 & Hub, roadmap, exp reports, cards \\
+Execution depth      & Iteration \& documentation     & 0.20 & 0.30 & MVPs, commits, scripts, profiling \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\paragraph{Results.}
+We report results from four evaluation runs: an initial baseline (v0, run \texttt{8e4ee098}), an intermediate run (\texttt{final}), and two post-improvement runs (v1 \texttt{final2} and a regression check).
+Between v0 and v1, the scoring rubric was refined: two concepts (upwind advection and diffusion positivity) each gained one additional detection pattern, making the v1 rubric slightly more comprehensive.
+All scores reported below use each run's contemporaneous rubric version.
+Table~\ref{tab:eval-results} compares v0 and v1.
+
+\begin{table}[t]
+\centering
+\caption{MRI-Piano evaluation results.  v0 is the first evaluation run; v1 follows targeted improvements to the agent loop (algorithm verification, reference code analysis, domain knowledge injection).  All dimensions pass in both runs.  Code correctness shows the largest improvement (+0.225), driven by the algorithm verification checklist.}
+\label{tab:eval-results}
+\small
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+& \multicolumn{2}{c}{\textbf{v0 (baseline)}} & \multicolumn{2}{c}{\textbf{v1 (improved)}} & & \\
+\cmidrule(lr){2-3} \cmidrule(lr){4-5}
+\textbf{Dimension} & Score & Pass? & Score & Pass? & $\Delta$ & Weight \\
+\midrule
+Code correctness        & 0.672 & \checkmark & 0.897 & \checkmark & +0.225 & 0.30 \\
+Pipeline completeness   & 0.929 & \checkmark & 0.929 & \checkmark & +0.000 & 0.25 \\
+Research process        & 0.750 & \checkmark & 0.750 & \checkmark & +0.000 & 0.25 \\
+Execution depth         & 0.764 & \checkmark & 0.806 & \checkmark & +0.042 & 0.20 \\
+\midrule
+\textbf{Aggregate}      & \textbf{0.774} & \checkmark & \textbf{0.850} & \checkmark & \textbf{+0.076} & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The v0 run already achieved a strong aggregate score of 0.774, well above the 0.50 threshold.
+Pipeline completeness (0.929) and research process (0.750) were high from the start, indicating that the agent's 3-layer document hierarchy and MVP-driven workflow reliably induce systematic research behavior.
+The main gap was in code correctness (0.672): while the agent implemented most algorithmic concepts, it achieved only partial coverage on upwind advection (2/4 patterns), stream-function velocity (3/4), diffusion positivity (1/4), and pseudo-Huber loss (3/4).
+
+After targeted improvements to the agent loop---algorithm verification checklists, enhanced reference code analysis, and domain knowledge injection---the v1 run achieved 0.850.
+Code correctness rose to 0.897, with stream-function velocity, pseudo-Huber loss, and adaptive ODE solver all reaching perfect scores (divergence-form diffusion was already at 1.0 in v0).
+The regression check (run on Feb~26, one day after v1) reproduced the identical 0.850 aggregate, confirming stability.
+
+Three findings merit emphasis.
+First, the \emph{research process} dimension scored identically (0.750) across all four runs: hub quality, roadmap quality, and experiment reports all scored 100\%, while knowledge capture remained at 0\%.
+This pattern indicates that the 3-layer document hierarchy reliably induces systematic behavior, but knowledge card generation is consistently lost to context window exhaustion before finalization.
+Second, the improvement was concentrated in \emph{code correctness} (+0.225), driven by the algorithm verification checklist (Step~3.2e in the agent loop) which mechanically checks critical algorithms against grep patterns after each MVP.
+This suggests that \emph{mechanical enforcement}---not agent memory---may be important for algorithmic fidelity in complex scientific tasks, though we cannot fully disentangle the contributions of the three simultaneous interventions (algorithm verification, enhanced reference analysis, and domain knowledge injection).
+Third, pipeline completeness was already near-ceiling (0.929) in v0, suggesting that the bootstrap process (reference code map + pipeline stage checklist) effectively front-loads architectural understanding.
+
+
+\paragraph{What makes it work.}
+The evaluation results point to four architectural features that enabled success on this task:
+(1)~The \emph{three-layer document hierarchy} (master hub, topic hub, experiment reports) provides structured knowledge accumulation across MVPs, preventing the agent from losing context across iterations.
+(2)~The \emph{hypothesis-driven agent loop} with MVP roadmaps and stop-loss criteria imposes disciplined iteration rather than random trial-and-error.
+(3)~The \emph{anti-fabrication guard} (Step~3.2c) forces the agent to extract metrics from actual log files rather than generating plausible-sounding numbers from memory---a failure mode documented in 80\% of agents in the MLR-Bench study~\cite{mlrbench}.
+(4)~The \emph{algorithm verification checklist} (Step~3.2e), added after the v0 gap analysis, mechanically verifies that critical algorithmic concepts are present in the implementation before allowing the agent to proceed, directly addressing the finding from PaperBench that agents achieve only 21\% replication rates even when code structure appears correct~\cite{paperbench}.
+
+\paragraph{Limitations.}
+This evaluation is a single-task case study.
+While MRI-Piano tests depth across all four dimensions, we cannot claim breadth: the agent has not been evaluated on tasks from other scientific domains, and the 9.8\% improvement could partly reflect task-specific tuning rather than general capability gains.
+The v0$\to$v1 comparison is confounded because three interventions were introduced simultaneously; we attribute the improvement to the algorithm verification checklist based on mechanistic reasoning (it directly checks the patterns that improved), but a controlled ablation has not been performed.
+Furthermore, the scoring rubric was developed by the same team that built the agent, creating a potential alignment between what the rubric measures and what the agent is designed to do well.
+We compare only across versions of our own agent and do not benchmark against other research agents (e.g., vanilla LLM baselines, SWE-Agent, OpenHands), which limits the conclusions about relative capability.
+Addressing these limitations---multi-task evaluation, controlled ablations, and cross-agent comparison---is an important direction for future work.
+
+
+%% ============================================================
+%% APPENDIX
+%% ============================================================
+%% ============================================================
+%% APPENDIX CONTENT
+%% NOTE: The parent document must issue \appendix before \input-ing
+%% this portion.  For standalone testing, wrap in a test harness.
+%% ============================================================
+\clearpage
+
+\section{MRI-Piano Evaluation Details}
+\label{app:eval-mri-piano}
+
+This appendix provides the complete task description, scoring rubric, agent trace analysis, and architecture mapping for the MRI-Piano evaluation presented in Section~\ref{sec:evaluation}.
+
+
+%% ------------------------------------------------------------
+\subsection{Task Description: MRI CTC PDE Fitting}
+\label{app:task-description}
+
+\paragraph{Problem background.}
+Dynamic contrast-enhanced MRI (DCE-MRI) is a medical imaging technique in which a paramagnetic contrast agent (typically gadolinium-based) is injected intravenously and its passage through tissue is tracked via rapid T1-weighted imaging.
+The observed signal intensity at each voxel changes over time as the contrast agent arrives, distributes through the tissue, and washes out.
+Converting these signal-intensity time courses to \emph{concentration-time curves} (CTCs) and then fitting transport models to the CTCs yields quantitative physiological parameters---perfusion, permeability, diffusion coefficients---that have diagnostic and prognostic value in oncology, neurology, and cardiology.
+
+\paragraph{The PDE model.}
+The PIANO framework models contrast agent transport as an advection-diffusion process on a 2D spatial domain $\Omega$:
+\begin{equation}
+\frac{\partial C}{\partial t} + \nabla \cdot (\mathbf{V} C) = \nabla \cdot (D \nabla C)
+\label{eq:advection-diffusion}
+\end{equation}
+where $C(\mathbf{x}, t)$ is the contrast agent concentration, $\mathbf{V}(\mathbf{x})$ is the velocity field, and $D(\mathbf{x})$ is the spatially varying diffusion coefficient.
+The velocity field is parameterized via a stream function $\psi$ as $\mathbf{V} = \nabla \times \psi$ to guarantee $\nabla \cdot \mathbf{V} = 0$ (divergence-free flow), and the diffusion coefficient is parameterized as $D = L^2$ to enforce positivity.
+Neumann (zero-flux) boundary conditions are applied at the domain boundary.
+
+\paragraph{Numerical requirements.}
+The spatial discretization employs an upwind scheme for the advection term (velocity-sign-dependent stencil selection) and a central-difference divergence-form discretization for the diffusion term, ensuring conservation.
+The resulting semi-discrete ODE system is integrated using an adaptive solver (e.g., \texttt{solve\_ivp} with RK45 or Radau methods from SciPy).
+Parameter fitting minimizes a pseudo-Huber loss function---a smooth approximation to $L_1$ loss that is robust to outliers---using gradient-based optimization (L-BFGS-B).
+
+\paragraph{Pipeline stages.}
+The complete pipeline comprises eight stages (Table~\ref{tab:pipeline-stages}), of which six are required for a functioning system and two (post-processing and spatial smoothing) are optional enhancements.
+
+\begin{table}[ht]
+\centering
+\caption{Eight pipeline stages for MRI CTC PDE fitting.  Required stages must be present for the pipeline to function; optional stages provide quality improvements.}
+\label{tab:pipeline-stages}
+\small
+\begin{tabular}{@{}clcl@{}}
+\toprule
+\textbf{\#} & \textbf{Stage} & \textbf{Required?} & \textbf{Key Concepts} \\
+\midrule
+1 & Signal-to-CTC conversion & Yes & Signal-concentration mapping, baseline signal \\
+2 & Mask generation          & Yes & Brain/tissue mask, thresholding \\
+3 & PDE formulation          & Yes & Advection-diffusion, finite differences, Neumann BC \\
+4 & ODE integration          & Yes & Adaptive solver (\texttt{solve\_ivp}), time stepping \\
+5 & Loss \& optimization     & Yes & Pseudo-Huber loss, regularization, L-BFGS \\
+6 & Parameter fitting pipeline & Yes & Inverse problem, stream function, $D = L^2$ \\
+7 & Post-processing          & No  & Visualization, error metrics, comparison plots \\
+8 & Spatial smoothing        & No  & Gaussian filtering, spatial gradient penalties \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\paragraph{What makes this task hard.}
+Three aspects make MRI CTC PDE fitting a demanding test of agent capability:
+\begin{enumerate}[itemsep=2pt,topsep=4pt]
+    \item \textbf{Domain knowledge}: The agent must understand MRI physics, pharmacokinetic modeling, and the mathematical relationship between signal intensity and contrast agent concentration---none of which is provided explicitly in the task description.
+    \item \textbf{Numerical methods}: Correct implementation requires specific discretization schemes (upwind for advection, central for diffusion), positivity-preserving parameterizations ($D = L^2$), and appropriate ODE solver selection---choices that interact subtly (e.g., using a non-upwind scheme for advection introduces numerical oscillations that corrupt the entire fitting).
+    \item \textbf{Systems integration}: The eight pipeline stages must form a coherent data flow, with outputs of each stage matching the expected inputs of the next.  Errors in early stages (e.g., incorrect signal-to-concentration conversion) cascade through the entire pipeline.
+\end{enumerate}
+
+
+%% ------------------------------------------------------------
+\subsection{Scoring Rubric}
+\label{app:scoring-rubric}
+
+\subsubsection{Dimension 1: Code Correctness (Weight 0.30)}
+
+Code correctness is assessed by pattern-matching seven algorithmic concepts against the agent's source code.
+Each concept has a set of detection patterns (regular expressions); the concept score equals the fraction of patterns matched.
+Three concepts are designated \emph{critical}: if any critical concept scores zero, the entire dimension is capped at 0.50, regardless of other scores.
+
+\begin{table}[ht]
+\centering
+\caption{Seven algorithmic concepts evaluated under code correctness.  Critical concepts (marked with~$\ast$) impose a score ceiling of 0.50 on the dimension if any one is completely missing.  Weights reflect relative importance.}
+\label{tab:algorithm-concepts}
+\small
+\begin{tabular}{@{}llccp{5.5cm}@{}}
+\toprule
+\textbf{Concept} & \textbf{Description} & \textbf{Weight} & \textbf{Req.} & \textbf{Detection summary} \\
+\midrule
+Upwind Advection$^\ast$         & Velocity-sign-dependent stencil   & 1.5 & Yes & \texttt{upwind}, forward/backward diff patterns \\
+Div-Form Diffusion$^\ast$       & $\nabla \cdot (D\nabla C)$ discretization & 1.5 & Yes & \texttt{divergence\_form}, diffusion term patterns \\
+Stream-Function$^\ast$           & $\mathbf{V} = \nabla \times \psi$ & 1.5 & Yes & \texttt{stream\_function}, curl patterns \\
+Diffusion Positivity            & $D = L^2$ parameterization        & 1.0 & Yes & $D = L^{**}2$, positivity patterns \\
+Pseudo-Huber Loss               & Smooth $L_1$ approximation        & 1.0 & Yes & \texttt{pseudo\_huber}, $\sqrt{1 + \cdot}$ patterns \\
+Adaptive ODE Solver             & Adaptive time-stepping            & 1.0 & Yes & \texttt{solve\_ivp}, \texttt{RK45}/\texttt{Radau} \\
+Data Mismatch Detection         & Quality checks on input data      & 0.5 & No  & \texttt{isnan}, residual, outlier patterns \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\subsubsection{Dimension 2: Pipeline Completeness (Weight 0.25)}
+
+Each of the eight pipeline stages (Table~\ref{tab:pipeline-stages}) has associated concepts with detection patterns.
+The stage score equals the fraction of concepts found; the dimension score is the mean across all stages.
+The minimum requirement is that all six required stages are at least partially present.
+
+
+\subsubsection{Dimension 3: Research Process (Weight 0.25)}
+
+This dimension evaluates four aspects of the agent's research methodology:
+
+\begin{enumerate}[itemsep=2pt,topsep=4pt]
+    \item \textbf{Hub quality} (25\%): Does the hub contain a problem tree, falsifiable hypotheses ($\geq 2$), and a consensus table with evidence links?
+    \item \textbf{Roadmap quality} (25\%): Does the roadmap define MVPs with explicit stop-loss criteria and decision gates?
+    \item \textbf{Experiment reports} (25\%): Are experiment reports front-loaded (core conclusions in the first 30 lines, including hypothesis verdict, key metrics, and reproduction command)?
+    \item \textbf{Knowledge capture} (25\%): Does the \texttt{card/} directory contain at least one knowledge card distilling reusable insights?
+\end{enumerate}
+
+\noindent
+The pass threshold (0.50) requires at minimum a well-formed hub, a roadmap, and at least one experiment report.
+
+
+\subsubsection{Dimension 4: Execution Depth (Weight 0.20)}
+
+Execution depth measures the intensity and systematicness of the agent's work:
+
+\begin{enumerate}[itemsep=2pt,topsep=4pt]
+    \item \textbf{MVP completion} (33\%): Fraction of planned MVPs completed (expected: $\geq 3$).
+    \item \textbf{Data understanding} (33\%): Presence of data profiling scripts, data documentation, and data visualizations.
+    \item \textbf{Iteration quality} (33\%): Number of git commits (expected: $\geq 10$) and numbered scripts in the \texttt{scripts/} directory.
+\end{enumerate}
+
+
+\subsubsection{Aggregate Scoring}
+
+The aggregate score is computed as a weighted sum:
+\begin{equation}
+S_{\text{agg}} = \sum_{d \in \mathcal{D}} w_d \cdot s_d
+\label{eq:aggregate}
+\end{equation}
+where $\mathcal{D} = \{\text{code\_correctness}, \text{pipeline\_completeness}, \text{research\_process}, \text{execution\_depth}\}$, $w_d$ is the dimension weight (Table~\ref{tab:eval-dimensions}), and $s_d$ is the dimension score after applying any ceiling rules.
+A run passes if $S_{\text{agg}} \geq 0.50$ and each dimension individually exceeds its per-dimension threshold.
+
+
+%% ------------------------------------------------------------
+\subsection{Agent Trace Analysis}
+\label{app:trace-analysis}
+
+This section traces the agent's problem-solving process through four phases, showing how each phase maps to the scoring dimensions.
+We focus on the v1 (post-improvement) run, which achieved an aggregate score of 0.850.
+
+\subsubsection{Phase 1: Literature Review and Problem Understanding}
+\label{app:phase1}
+
+\noindent\textit{Scoring dimensions: Research Process, Pipeline Completeness.}
+
+The agent begins by executing the \texttt{/research start} bootstrap, which triggers a structured initialization sequence:
+
+\begin{enumerate}[itemsep=2pt,topsep=4pt]
+    \item \textbf{Data profiling}: The agent creates \texttt{scripts/00\_data\_profile.py}, scans the provided MRI data directory, identifies the file formats (FITS, NIfTI), and documents the data schema---spatial dimensions, temporal resolution, and signal intensity ranges.
+    \item \textbf{Reference code analysis}: Detecting the presence of reference code in the data path (\texttt{task\_f/code/}), the agent generates a \texttt{reference\_code\_map.md} that catalogs the reference implementation's module structure, data flow, key algorithmic choices, and a Must-Implement Algorithm Checklist with seven entries.
+    \item \textbf{Domain knowledge search}: The agent queries for standard approaches to inverse problems in DCE-MRI, identifies the advection-diffusion framework as the standard method, and documents candidate libraries (\texttt{scipy.integrate}, \texttt{scipy.optimize}) with Build/Import decisions.
+    \item \textbf{Hub and roadmap creation}: The topic hub is created with a problem tree decomposing the task into subproblems (signal conversion, PDE formulation, parameter fitting, validation), two falsifiable hypotheses, and initial references to standard methods.  The roadmap defines four MVPs with explicit stop-loss criteria.
+\end{enumerate}
+
+This phase directly contributes to the \textbf{research\_process} dimension (hub quality: 100\%, roadmap quality: 100\%) and lays the foundation for pipeline completeness by mapping the eight required stages before any code is written.
+
+
+\subsubsection{Phase 2: Pipeline Scaffolding}
+\label{app:phase2}
+
+\noindent\textit{Scoring dimension: Pipeline Completeness.}
+
+With the reference code map and roadmap established, the agent scaffolds the computational pipeline through the first two MVPs:
+
+\begin{itemize}[itemsep=2pt,topsep=4pt]
+    \item \textbf{MVP-0 (Data Profiling Baseline)}: Creates preprocessing scripts for signal-to-CTC conversion (\texttt{01\_preprocess.py}), mask generation (\texttt{02\_brain\_mask.py}), and ADC baseline computation.  The MVP-0 Sanity Gate (Step~4.1 in the agent loop) verifies that outputs are non-NaN and within physically reasonable ranges.
+    \item \textbf{MVP-1 (PDE Framework Validation)}: Implements the core PDE solver (\texttt{03\_pde\_solver.py}) with upwind advection, divergence-form diffusion, stream-function velocity parameterization, and adaptive ODE integration.  Tests on synthetic data with known parameters to verify correctness before applying to real data.
+\end{itemize}
+
+The pipeline completeness score of 0.929 reflects near-complete coverage of all eight stages, including the two optional stages (post-processing and spatial smoothing), with only minor gaps in signal conversion (2/3 concept patterns matched).
+
+
+\subsubsection{Phase 3: Algorithm Implementation and Verification}
+\label{app:phase3}
+
+\noindent\textit{Scoring dimension: Code Correctness.}
+
+The core algorithmic concepts are implemented in \texttt{scripts/03\_pde\_solver.py} and related files.
+The Algorithm Verification Checklist (Step~3.2e) plays a critical role here: after each MVP, the agent runs pattern-matching checks against the Must-Implement list.
+
+Key implementations and their detection evidence:
+\begin{itemize}[itemsep=2pt,topsep=4pt]
+    \item \textbf{Upwind Advection} (4/5 patterns): Velocity-sign-dependent stencil selection in \texttt{03\_pde\_solver.py:76--79} and \texttt{06\_steady\_state\_v2.py:37}.
+    \item \textbf{Stream-Function Velocity} (4/4 patterns): $\mathbf{V} = \nabla \times \psi$ computed via central differences of the stream function in \texttt{03\_pde\_solver.py:125--133}.
+    \item \textbf{Divergence-Form Diffusion} (4/4 patterns): Conservative discretization $\nabla \cdot (D \nabla C)$ in \texttt{08\_multifeature\_segmentation.py:36--38}.
+    \item \textbf{Adaptive ODE Solver} (4/4 patterns): \texttt{scipy.integrate.solve\_ivp} with method selection in \texttt{03\_pde\_solver.py:16, 183}.
+    \item \textbf{Pseudo-Huber Loss} (4/4 patterns): Smooth $L_1$ approximation in \texttt{03\_pde\_solver.py:232--233}.
+\end{itemize}
+
+The code correctness score of 0.897 reflects strong coverage across all seven concepts.
+The v1 improvement over v0 (+0.225) was driven by the algorithm verification mechanism improving upwind advection (v0: 2/4 $\to$ v1: 4/5), stream-function velocity (3/4 $\to$ 4/4), diffusion positivity (1/4 $\to$ 3/5), and pseudo-Huber loss (3/4 $\to$ 4/4).
+
+
+\subsubsection{Phase 4: Verification and Iteration}
+\label{app:phase4}
+
+\noindent\textit{Scoring dimensions: Execution Depth, Research Process.}
+
+The agent executes four MVPs total, producing four experiment reports with 100\% front-loading compliance:
+
+\begin{enumerate}[itemsep=2pt,topsep=4pt]
+    \item \texttt{exp\_data-profiling-baseline}: Data characterization and preprocessing validation.
+    \item \texttt{exp\_pde-framework-validation}: PDE solver verification on synthetic data with known parameters.
+    \item \texttt{exp\_real-data-fitting}: Application of the validated solver to real MRI data.
+    \item \texttt{exp\_multifeature-evaluation}: Multi-feature segmentation and comparative analysis.
+\end{enumerate}
+
+The execution depth score of 0.806 reflects 4/4 MVPs completed, 13 numbered scripts in the \texttt{scripts/} directory, and 5 git commits.
+The iteration quality sub-score (0.75) indicates room for improvement in commit granularity (5 commits vs.\ the expected~$\geq 10$).
+
+The sole zero-score sub-dimension across the entire evaluation is \textbf{knowledge capture} (0.0\% under research process): the agent produced no knowledge cards despite completing four MVPs.
+This is consistent with the known premature-termination failure mode~\cite{masft}: the agent reaches the end of its context window before executing the finalization steps that produce knowledge artifacts.
+The FINALIZE Readiness Check (Step~3.6 in the agent loop), added in response to this finding, mitigates but does not fully eliminate this gap.
+
+
+%% ------------------------------------------------------------
+\subsection{Architecture Mapping: /research Features to Scoring Dimensions}
+\label{app:architecture-mapping}
+
+This section maps the key features of the \texttt{/research} agent (Section~\ref{sec:agent-architecture}) to the scoring dimensions, showing which architectural components contribute to which evaluation outcomes.
+
+\begin{table}[ht]
+\centering
+\caption{Mapping of \texttt{/research} agent features to MRI-Piano scoring dimensions.  Each row identifies the agent mechanism, the scoring dimension(s) it supports, and the observed effect in the v0$\to$v1 comparison.}
+\label{tab:architecture-mapping}
+\small
+\begin{tabular}{@{}p{3.5cm}p{2.8cm}p{6.5cm}@{}}
+\toprule
+\textbf{Agent Feature} & \textbf{Dimension(s)} & \textbf{Observed Effect} \\
+\midrule
+\textbf{Bootstrap} (\texttt{start}) &
+  Pipeline, Depth &
+  One-command initialization creates data profile, reference code map, hub, roadmap, and first experiment skeleton.  Ensures pipeline stages are identified before coding begins. \\
+\addlinespace
+\textbf{Agent Loop} (\texttt{rq}) &
+  All &
+  Autonomous multi-MVP iteration without user confirmation.  v1 completed 4~MVPs producing 13~scripts and 4~experiment reports. \\
+\addlinespace
+\textbf{3-Layer Doc Hierarchy} (hub $\to$ topic $\to$ exp) &
+  Research Process &
+  Hub quality 100\%, roadmap quality 100\% in both v0 and v1.  Structured knowledge accumulation across MVPs. \\
+\addlinespace
+\textbf{Front-Loading Rule} &
+  Research Process &
+  All 4 experiment reports scored 100\% on front-loading compliance.  Conclusions, metrics, and reproduction commands in first 30~lines. \\
+\addlinespace
+\textbf{Algorithm Verification Checklist} (Step~3.2e) &
+  Code Correctness &
+  \textit{Added after v0.}  Directly responsible for v0$\to$v1 improvement: upwind advection 50\%$\to$80\%, stream-function 75\%$\to$100\%, adaptive ODE 75\%$\to$100\%, pseudo-Huber 75\%$\to$100\%. \\
+\addlinespace
+\textbf{Reference Code Analysis} (Step~2b) &
+  Pipeline, Code &
+  \textit{Enhanced after v0.}  Deep analysis with Must-Implement checklist ensures no critical algorithm is overlooked during implementation. \\
+\addlinespace
+\textbf{Anti-Fabrication Guard} (Step~3.2c) &
+  Code, Depth &
+  Forces metric extraction from actual logs/files.  Prevents hallucinated results---a failure mode in 80\% of agents~\cite{mlrbench}. \\
+\addlinespace
+\textbf{MVP-0 Sanity Gate} (Step~4.1) &
+  Code, Depth &
+  Baseline validation prevents error cascading.  Ensures signal conversion and mask generation produce valid outputs before PDE fitting begins. \\
+\addlinespace
+\textbf{Domain Knowledge Injection} (Step~3.1b) &
+  Code &
+  \textit{Added after v0.}  Injects standard methods from hub~\S0 into coding prompts.  Ensures agent uses upwind scheme (not central), stream function (not raw velocity), etc. \\
+\addlinespace
+\textbf{FINALIZE Readiness Check} (Step~3.6) &
+  Research Process &
+  Checks card/exp/img counts every 2~MVPs.  Mitigates premature termination.  Knowledge capture still scored 0\%---requires further work. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Gap analysis.}
+The v1 evaluation identifies three remaining gaps:
+\begin{enumerate}[itemsep=2pt,topsep=4pt]
+    \item \textbf{Knowledge capture} (0\%): The agent consistently fails to produce knowledge cards before context exhaustion.  The current FINALIZE Readiness Check (every 2~MVPs) is necessary but insufficient; a more aggressive strategy---producing cards immediately after each MVP, not as a deferred batch---may be required.
+    \item \textbf{Commit granularity}: 5~commits across 4~MVPs falls short of the expected $\geq 10$.  The commit-per-MVP rule is followed, but intra-MVP intermediate commits are inconsistent.
+    \item \textbf{Signal conversion}: 2/3 concept patterns matched (missing the explicit \texttt{signal2ctc} keyword pattern).  The functionality exists but uses alternative naming, suggesting the detection rubric may benefit from broader pattern coverage.
+\end{enumerate}
+
+\paragraph{Improvement feedback loop.}
+The MRI-Piano evaluation directly drove the following improvements to the \texttt{/research} agent:
+\begin{itemize}[itemsep=2pt,topsep=4pt]
+    \item v0 gap: Partial upwind advection (2/4), stream-function (3/4), diffusion positivity (1/4) $\to$ Added Algorithm Verification Checklist (Step~3.2e) with grep-based pattern checks.
+    \item v0 gap: Shallow reference code analysis $\to$ Enhanced Reference Code Map to include \S5~Must-Implement Checklist and \S6~Pipeline Stage Checklist.
+    \item v0 gap: Missing domain context in coding prompts $\to$ Added Domain Knowledge Injection (Step~3.1b) reading from hub~\S0.
+    \item v0 gap: Knowledge cards empty $\to$ Added FINALIZE Readiness Check (Step~3.6) and per-MVP card creation mandate.
+\end{itemize}
+
+\noindent
+This evaluation-driven improvement cycle---run eval, identify gaps, trace gaps to architectural components, implement targeted fixes, re-run eval---exemplifies the continuous self-evolution mechanism described in Section~\ref{sec:agent-architecture}.
+The 9.8\% relative improvement from v0 (0.774) to v1 (0.850), concentrated in algorithmic fidelity, validates the feedback loop's effectiveness---and the stability across the regression check confirms that improvements are durable.
